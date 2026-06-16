@@ -70,7 +70,7 @@ final class LibraryScanner {
                 startedScopes.append(shareURL)
             }
 
-            let items = await Task.detached(priority: .userInitiated) { [shareName, shareURL, publicShareName = self.publicShareName, defaultPersona = self.defaultPersona] in
+            let rawItems = await Task.detached(priority: .userInitiated) { [shareName, shareURL, publicShareName = self.publicShareName, defaultPersona = self.defaultPersona] in
                 Self.enumerateShare(
                     shareName: shareName,
                     shareURL: shareURL,
@@ -79,6 +79,7 @@ final class LibraryScanner {
                 )
             }.value
 
+            let items = Self.dedupe(rawItems)
             allWorkItems.append(contentsOf: items)
 
             for item in items {
@@ -103,6 +104,24 @@ final class LibraryScanner {
     }
 
     // MARK: - Enumeration (background)
+
+    // Same (persona, album, filename) appearing at multiple folder depths in the
+    // same share is treated as one song. Keep the shallowest path so the album
+    // folder is more likely to contain the sidecar artwork.
+    nonisolated private static func dedupe(_ items: [SongWorkItem]) -> [SongWorkItem] {
+        var seen: [String: SongWorkItem] = [:]
+        for item in items {
+            let key = "\(item.personaName.lowercased())|\(item.albumDisplayName.lowercased())|\(item.songURL.lastPathComponent.lowercased())"
+            if let existing = seen[key] {
+                if item.relativePath.count < existing.relativePath.count {
+                    seen[key] = item
+                }
+            } else {
+                seen[key] = item
+            }
+        }
+        return Array(seen.values)
+    }
 
     nonisolated private static func enumerateShare(
         shareName: String,
@@ -393,7 +412,7 @@ final class LibraryScanner {
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
 
         for (albumKey, folderURL) in albumFolders {
-            let parts = albumKey.split(separator: "|", maxSplits: 1).map(String.init)
+            let parts = albumKey.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
             guard parts.count == 2 else { continue }
             let shareName = parts[0]
             let relPath = parts[1]
@@ -409,7 +428,9 @@ final class LibraryScanner {
                 continue
             }
 
-            let folderName = folderURL.lastPathComponent
+            let folderName: String = album.relativePath.isEmpty
+                ? album.shareName
+                : folderURL.lastPathComponent
             let safeRel = album.relativePath.replacingOccurrences(of: "/", with: "_")
             let sidecar = folderURL.appendingPathComponent("\(folderName).png")
             let destSidecar = cacheDir.appendingPathComponent("\(album.shareName)__\(safeRel).png")

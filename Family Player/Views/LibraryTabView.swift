@@ -42,6 +42,14 @@ struct LibraryTabView: View {
                     }
                 }
 
+                Section("Setup") {
+                    NavigationLink {
+                        ShareManagementView()
+                    } label: {
+                        Label("Manage Shares", systemImage: "folder.badge.gearshape")
+                    }
+                }
+
                 Section {
                     Button {
                         Task { await scanner.scan(coordinator: coordinator, context: modelContext) }

@@ -31,6 +31,14 @@ struct SetupView: View {
                     .padding(.vertical, 8)
                 }
 
+                Section {
+                    NavigationLink {
+                        ShareInvitationsView()
+                    } label: {
+                        Label("Haven't accepted your invitations yet?", systemImage: "envelope.arrow.triangle.branch")
+                    }
+                }
+
                 Section("Shared Folders") {
                     ForEach(ShareAccessCoordinator.expectedShares, id: \.self) { shareName in
                         HStack {
