@@ -12,7 +12,12 @@ import SwiftData
 struct Family_PlayerApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Persona.self,
+            Album.self,
+            Song.self,
+            Playlist.self,
+            PlaylistEntry.self,
+            ShareBookmark.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,7 +30,7 @@ struct Family_PlayerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
         .modelContainer(sharedModelContainer)
     }
