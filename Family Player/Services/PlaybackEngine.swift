@@ -126,6 +126,7 @@ final class PlaybackEngine {
             player.pause()
             isPlaying = false
         } else {
+            try? AVAudioSession.sharedInstance().setActive(true)
             player.play()
             isPlaying = true
         }
@@ -228,6 +229,7 @@ final class PlaybackEngine {
             await ensureLocallyAvailable(url: songURL)
         }
 
+        try? AVAudioSession.sharedInstance().setActive(true)
         let item = AVPlayerItem(url: songURL)
         player.removeAllItems()
         player.insert(item, after: nil)
@@ -252,6 +254,39 @@ final class PlaybackEngine {
             try session.setActive(true)
         } catch {
             lastError = "Audio session: \(error.localizedDescription)"
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: session,
+            queue: .main
+        ) { [weak self] notification in
+            MainActor.assumeIsolated {
+                self?.handleAudioInterruption(notification)
+            }
+        }
+    }
+
+    private func handleAudioInterruption(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+
+        switch type {
+        case .began:
+            isPlaying = false
+            updateNowPlayingInfoElapsed()
+        case .ended:
+            guard let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt else { return }
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+            if options.contains(.shouldResume), currentSong != nil {
+                try? AVAudioSession.sharedInstance().setActive(true)
+                player.play()
+                isPlaying = true
+                updateNowPlayingInfoElapsed()
+            }
+        @unknown default:
+            break
         }
     }
 
