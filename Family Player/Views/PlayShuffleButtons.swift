@@ -9,13 +9,29 @@ struct PlayShuffleButtons: View {
     @Environment(PlaybackEngine.self) private var engine
     let songs: [Song]
 
+    private var currentInScope: Bool {
+        guard let current = engine.currentSong else { return false }
+        return songs.contains { $0.stableID == current.stableID }
+    }
+
+    private var showPause: Bool {
+        currentInScope && engine.isPlaying
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Button {
-                Task { await engine.play(songs: songs, startingAt: 0) }
+                if currentInScope {
+                    engine.togglePlayPause()
+                } else {
+                    Task { await engine.play(songs: songs, startingAt: 0) }
+                }
             } label: {
-                Label("Play", systemImage: "play.fill")
-                    .frame(maxWidth: .infinity)
+                Label(
+                    showPause ? "Pause" : "Play",
+                    systemImage: showPause ? "pause.fill" : "play.fill"
+                )
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .disabled(songs.isEmpty)
