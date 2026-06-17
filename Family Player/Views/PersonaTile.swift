@@ -9,7 +9,11 @@ struct PersonaTile: View {
     let persona: Persona
 
     private var representativeArt: String? {
-        persona.albums
+        if let path = persona.artworkCachePath,
+           FileManager.default.fileExists(atPath: path) {
+            return path
+        }
+        return persona.albums
             .sorted { $0.title < $1.title }
             .lazy
             .compactMap { $0.artworkCachePath }

@@ -100,6 +100,7 @@ final class LibraryScanner {
         progress.scannedCount = allWorkItems.count
 
         await cacheArtwork(for: albumFoldersSeen, context: context)
+        await cachePersonaArtwork(shareRoots: coordinator.resolvedURLs, context: context)
         await pruneMissing(currentStableIDs: Set(allWorkItems.map(stableID)), context: context)
     }
 
@@ -491,6 +492,47 @@ final class LibraryScanner {
     nonisolated static func artworkCacheDirectory() -> URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return docs.appendingPathComponent("ArtworkCache", isDirectory: true)
+    }
+
+    // MARK: - Persona artwork
+    //
+    // Mac player convention: each share may contain an "Artists" folder with
+    // "<PersonaName>.png" files. Look in the share root and one subfolder deep.
+    private func cachePersonaArtwork(shareRoots: [String: URL], context: ModelContext) async {
+        let descriptor = FetchDescriptor<Persona>()
+        guard let personas = try? context.fetch(descriptor), !personas.isEmpty else { return }
+        let cacheDir = Self.artworkCacheDirectory()
+        try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+
+        let fm = FileManager.default
+        for persona in personas {
+            if let existing = persona.artworkCachePath, fm.fileExists(atPath: existing) {
+                continue
+            }
+            let safeName = persona.name.replacingOccurrences(of: "/", with: "_")
+            let dest = cacheDir.appendingPathComponent("_persona_\(safeName).png")
+
+            var candidates: [URL] = []
+            for (_, shareURL) in shareRoots {
+                candidates.append(shareURL.appendingPathComponent("Artists/\(persona.name).png"))
+                if let entries = try? fm.contentsOfDirectory(at: shareURL, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) {
+                    for entry in entries {
+                        let isDir = (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+                        if isDir {
+                            candidates.append(entry.appendingPathComponent("Artists/\(persona.name).png"))
+                        }
+                    }
+                }
+            }
+
+            for candidate in candidates {
+                if await Self.coordinatedCopy(from: candidate, to: dest) {
+                    persona.artworkCachePath = dest.path
+                    break
+                }
+            }
+        }
+        try? context.save()
     }
 
     // MARK: - Pruning
