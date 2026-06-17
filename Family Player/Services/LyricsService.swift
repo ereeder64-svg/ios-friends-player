@@ -63,6 +63,16 @@ enum LyricsService {
         return docs.appendingPathComponent("LyricsCache", isDirectory: true)
     }
 
+    static func clearCache(for stableID: String) {
+        guard let url = cachedLyricsPath(for: stableID) else { return }
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    static func clearAllCache() {
+        guard let dir = cacheDirectory() else { return }
+        try? FileManager.default.removeItem(at: dir)
+    }
+
     /// Returns stableIDs of songs whose cached lyrics contain the query (case-insensitive).
     /// Matches against the LyricsCache directory only — songs without cached lyrics aren't searched.
     static func searchLyrics(query: String) -> Set<String> {

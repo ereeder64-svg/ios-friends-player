@@ -65,6 +65,13 @@ struct LibraryTabView: View {
                         Label("Reset Artwork Cache & Rescan", systemImage: "photo.badge.arrow.down")
                     }
                     .disabled(scanner.progress.isScanning)
+                    Button(role: .destructive) {
+                        LyricsService.clearAllCache()
+                        for song in songs { song.hasLyrics = false }
+                        try? modelContext.save()
+                    } label: {
+                        Label("Clear Lyrics Cache", systemImage: "text.badge.xmark")
+                    }
                 }
 
             }

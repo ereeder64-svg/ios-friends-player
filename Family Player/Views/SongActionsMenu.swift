@@ -45,6 +45,14 @@ struct SongActionsMenu: View {
                 Label("View Lyrics", systemImage: "text.alignleft")
             }
 
+            Button {
+                LyricsService.clearCache(for: song.stableID)
+                song.hasLyrics = false
+                try? song.modelContext?.save()
+            } label: {
+                Label("Refresh Lyrics", systemImage: "arrow.clockwise")
+            }
+
             if let playlist = fromPlaylist {
                 Divider()
                 Button(role: .destructive) {
