@@ -9,6 +9,7 @@ import SwiftData
 struct NowPlayingSheet: View {
     @Environment(PlaybackEngine.self) private var engine
     @Environment(\.dismiss) private var dismiss
+    @State private var showingLyrics = false
 
     var body: some View {
         @Bindable var engine = engine
@@ -26,6 +27,15 @@ struct NowPlayingSheet: View {
                 Text("Now Playing")
                     .font(.subheadline.weight(.medium))
                 Spacer()
+                Button {
+                    showingLyrics.toggle()
+                } label: {
+                    Image(systemName: showingLyrics ? "quote.bubble.fill" : "quote.bubble")
+                        .font(.title3)
+                        .foregroundStyle(showingLyrics ? Color.accentColor : .primary)
+                }
+                .buttonStyle(.plain)
+                .disabled(engine.currentSong == nil)
                 Button {
                     if let song = engine.currentSong {
                         song.isFavorite.toggle()
@@ -45,21 +55,26 @@ struct NowPlayingSheet: View {
             Spacer()
 
             if let song = engine.currentSong {
-                AlbumArtworkView(
-                    cachePath: song.album?.artworkCachePath,
-                    title: song.album?.title ?? song.title,
-                    size: 280,
-                    cornerRadius: 12
-                )
-                VStack(spacing: 4) {
-                    Text(song.title).font(.title3.bold())
-                    Text(song.album?.persona?.name ?? "").foregroundStyle(.secondary)
-                    if let albumTitle = song.album?.title {
-                        Text(albumTitle).font(.caption).foregroundStyle(.secondary)
+                if showingLyrics {
+                    LyricsView(song: song)
+                        .frame(maxHeight: .infinity)
+                } else {
+                    AlbumArtworkView(
+                        cachePath: song.album?.artworkCachePath,
+                        title: song.album?.title ?? song.title,
+                        size: 280,
+                        cornerRadius: 12
+                    )
+                    VStack(spacing: 4) {
+                        Text(song.title).font(.title3.bold())
+                        Text(song.album?.persona?.name ?? "").foregroundStyle(.secondary)
+                        if let albumTitle = song.album?.title {
+                            Text(albumTitle).font(.caption).foregroundStyle(.secondary)
+                        }
                     }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
                 }
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
             } else {
                 ContentUnavailableView("Nothing Playing", systemImage: "music.note")
             }

@@ -13,6 +13,7 @@ struct SongActionsMenu: View {
     var fromPlaylist: Playlist? = nil
 
     @State private var showAddToPlaylist = false
+    @State private var showLyrics = false
 
     var body: some View {
         Menu {
@@ -39,11 +40,10 @@ struct SongActionsMenu: View {
             FavoriteMenuButton(song: song)
 
             Button {
-                // TODO: View Lyrics (Step 5)
+                showLyrics = true
             } label: {
                 Label("View Lyrics", systemImage: "text.alignleft")
             }
-            .disabled(!song.hasLyrics)
 
             if let playlist = fromPlaylist {
                 Divider()
@@ -62,6 +62,9 @@ struct SongActionsMenu: View {
         }
         .sheet(isPresented: $showAddToPlaylist) {
             AddToPlaylistSheet(song: song)
+        }
+        .sheet(isPresented: $showLyrics) {
+            LyricsSheet(song: song)
         }
     }
 
