@@ -67,23 +67,6 @@ struct LibraryTabView: View {
                     .disabled(scanner.progress.isScanning)
                 }
 
-                Section("Diagnostics") {
-                    let withArt = albums.filter { $0.artworkCachePath != nil }.count
-                    let withArtOnDisk = albums.filter {
-                        guard let p = $0.artworkCachePath else { return false }
-                        return FileManager.default.fileExists(atPath: p)
-                    }.count
-                    Text("Artwork in DB: \(withArt) / \(albums.count)")
-                        .font(.caption)
-                    Text("Artwork on disk: \(withArtOnDisk) / \(albums.count)")
-                        .font(.caption)
-                    if let sample = albums.first(where: { $0.artworkCachePath != nil }) {
-                        Text("Sample: \(sample.artworkCachePath ?? "")")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(3)
-                    }
-                }
             }
             .navigationTitle("Library")
         }
