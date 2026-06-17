@@ -26,6 +26,9 @@ struct MainTabView: View {
             Tab("Downloads", systemImage: "arrow.down.circle") {
                 DownloadsTabView()
             }
+            Tab(role: .search) {
+                SearchTabView()
+            }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .tabViewBottomAccessory(isEnabled: engine.currentSong != nil) {

@@ -243,6 +243,15 @@ final class PlaybackEngine {
         try? song.modelContext?.save()
 
         updateNowPlayingInfo()
+        cacheLyricsInBackground(for: song, url: songURL)
+    }
+
+    private func cacheLyricsInBackground(for song: Song, url: URL) {
+        guard LyricsService.loadCached(for: song.stableID) == nil else { return }
+        let stableID = song.stableID
+        Task.detached(priority: .utility) {
+            _ = await LyricsService.extract(from: url, stableID: stableID)
+        }
     }
 
     // MARK: - Audio session

@@ -63,6 +63,28 @@ enum LyricsService {
         return docs.appendingPathComponent("LyricsCache", isDirectory: true)
     }
 
+    /// Returns stableIDs of songs whose cached lyrics contain the query (case-insensitive).
+    /// Matches against the LyricsCache directory only — songs without cached lyrics aren't searched.
+    static func searchLyrics(query: String) -> Set<String> {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let dir = cacheDirectory(),
+              let entries = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else {
+            return []
+        }
+        let needle = trimmed.lowercased()
+        var hits: Set<String> = []
+        for url in entries where url.pathExtension == "txt" {
+            guard let data = try? Data(contentsOf: url),
+                  let text = String(data: data, encoding: .utf8) else { continue }
+            if text.lowercased().contains(needle) {
+                let stableID = url.deletingPathExtension().lastPathComponent
+                    .replacingOccurrences(of: "_", with: "/")
+                hits.insert(stableID)
+            }
+        }
+        return hits
+    }
+
     // USLT raw frame layout (when AVFoundation gives us the data blob, not a string):
     // [encoding:1][language:3][descriptor:null-terminated][lyrics:rest]
     private static func decodeUSLT(_ data: Data) -> String? {
