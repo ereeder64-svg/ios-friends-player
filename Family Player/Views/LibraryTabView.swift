@@ -58,6 +58,10 @@ struct LibraryTabView: View {
 
                 Section("Downloads") {
                     BulkDownloadMenuItems(songs: songs, label: "All Songs")
+                    let downloaded = songs.filter { $0.downloadCachePath != nil }.count
+                    Text("\(downloaded) of \(songs.count) songs downloaded")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section {
