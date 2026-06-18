@@ -26,6 +26,11 @@ struct LibraryTabView: View {
 
                 Section("Browse") {
                     NavigationLink {
+                        SearchTabView()
+                    } label: {
+                        Label("Search", systemImage: "magnifyingglass")
+                    }
+                    NavigationLink {
                         PersonasListView()
                     } label: {
                         Label("Personas (\(personas.count))", systemImage: "person.2")

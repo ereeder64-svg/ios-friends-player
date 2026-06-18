@@ -14,47 +14,45 @@ struct SearchTabView: View {
     @State private var isSearchingLyrics = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 12) {
-                    Toggle(isOn: $searchLyrics) {
-                        Label("Search lyrics", systemImage: "text.alignleft")
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 6)
-
-                    if searchText.isEmpty {
-                        ContentUnavailableView(
-                            "Search Your Library",
-                            systemImage: "magnifyingglass",
-                            description: Text(searchLyrics
-                                ? "Find songs by lyric phrases you remember. Lyric search only covers songs you've played or viewed lyrics for."
-                                : "Find songs by title, persona, or album.")
-                        )
-                        .padding(.top, 60)
-                    } else if isSearchingLyrics {
-                        ProgressView()
-                            .padding(.top, 60)
-                    } else if results.isEmpty {
-                        ContentUnavailableView.search(text: searchText)
-                            .padding(.top, 40)
-                    } else {
-                        PlayShuffleButtons(songs: results)
-                            .padding(.horizontal, 20)
-                        SongListSection(songs: results)
-                    }
+        ScrollView {
+            VStack(spacing: 12) {
+                Toggle(isOn: $searchLyrics) {
+                    Label("Search lyrics", systemImage: "text.alignleft")
                 }
-                .padding(.bottom, 16)
+                .padding(.horizontal, 20)
+                .padding(.top, 6)
+
+                if searchText.isEmpty {
+                    ContentUnavailableView(
+                        "Search Your Library",
+                        systemImage: "magnifyingglass",
+                        description: Text(searchLyrics
+                            ? "Find songs by lyric phrases you remember. Lyric search only covers songs you've played or viewed lyrics for."
+                            : "Find songs by title, persona, or album.")
+                    )
+                    .padding(.top, 60)
+                } else if isSearchingLyrics {
+                    ProgressView()
+                        .padding(.top, 60)
+                } else if results.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                        .padding(.top, 40)
+                } else {
+                    PlayShuffleButtons(songs: results)
+                        .padding(.horizontal, 20)
+                    SongListSection(songs: results)
+                }
             }
-            .navigationTitle("Search")
-            .searchable(
-                text: $searchText,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: searchLyrics ? "Search lyrics" : "Songs, personas, albums"
-            )
-            .task(id: searchKey) {
-                await runLyricSearchIfNeeded()
-            }
+            .padding(.bottom, 16)
+        }
+        .navigationTitle("Search")
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: searchLyrics ? "Search lyrics" : "Songs, personas, albums"
+        )
+        .task(id: searchKey) {
+            await runLyricSearchIfNeeded()
         }
     }
 
