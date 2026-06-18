@@ -317,13 +317,16 @@ final class PlaybackEngine {
         if values.ubiquitousItemDownloadingStatus == .current { return }
 
         try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-        for _ in 0..<24 {
-            try? await Task.sleep(nanoseconds: 250_000_000)
+        // Poll up to 60 seconds — Wi-Fi typically finishes in 1-3s but cellular
+        // can take 15-45s depending on signal strength.
+        for _ in 0..<60 {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             if let v = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey]),
                v.ubiquitousItemDownloadingStatus == .current {
                 return
             }
         }
+        lastError = "Couldn't download from iCloud. Check your connection and try again."
     }
 
     // MARK: - Observers
