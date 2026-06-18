@@ -34,6 +34,15 @@ struct MainTabView: View {
         .sheet(isPresented: $showNowPlaying) {
             NowPlayingSheet()
         }
+        .alert(
+            "Playback Error",
+            isPresented: Binding(
+                get: { engine.lastError != nil },
+                set: { if !$0 { engine.clearLastError() } }
+            ),
+            actions: { Button("OK") { engine.clearLastError() } },
+            message: { Text(engine.lastError ?? "") }
+        )
     }
 }
 

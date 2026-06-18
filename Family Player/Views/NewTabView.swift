@@ -50,6 +50,17 @@ struct NewTabView: View {
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: "Search new songs"
             )
+            .toolbar {
+                if !displayedSongs.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            BulkDownloadMenuItems(songs: displayedSongs, label: "All New")
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                    }
+                }
+            }
             .overlay {
                 if displayedSongs.isEmpty {
                     ContentUnavailableView(

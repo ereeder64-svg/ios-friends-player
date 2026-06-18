@@ -28,6 +28,12 @@ struct AllSongsView: View {
                     .padding(.top, 8)
 
                 SongListSection(songs: filteredSongs)
+
+                if !filteredSongs.isEmpty {
+                    SongsCountFooter(songs: filteredSongs)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                }
             }
             .padding(.bottom, 16)
         }
@@ -37,6 +43,17 @@ struct AllSongsView: View {
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Search songs, personas, albums"
         )
+        .toolbar {
+            if !songs.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        BulkDownloadMenuItems(songs: songs, label: "All Songs")
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+        }
         .overlay {
             if songs.isEmpty {
                 ContentUnavailableView("No Songs", systemImage: "music.note")
@@ -44,6 +61,37 @@ struct AllSongsView: View {
                 ContentUnavailableView.search(text: searchText)
             }
         }
+    }
+}
+
+struct SongsCountFooter: View {
+    let songs: [Song]
+
+    private var totalSeconds: Double {
+        songs.reduce(0) { $0 + ($1.duration > 0 ? $1.duration : 0) }
+    }
+
+    private var text: String {
+        let count = songs.count
+        let songsStr = "\(count) song\(count == 1 ? "" : "s")"
+        guard totalSeconds > 0 else { return songsStr }
+        let total = Int(totalSeconds.rounded())
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let durStr: String
+        if hours > 0 {
+            durStr = "\(hours) hour\(hours == 1 ? "" : "s") \(minutes) minute\(minutes == 1 ? "" : "s")"
+        } else {
+            durStr = "\(minutes) minute\(minutes == 1 ? "" : "s")"
+        }
+        return "\(songsStr), \(durStr)"
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

@@ -81,6 +81,15 @@ struct PlaylistsTabView: View {
                         Image(systemName: "plus")
                     }
                 }
+                if !allSongs.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            BulkDownloadMenuItems(songs: allSongs, label: "All Playlists")
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                    }
+                }
             }
             .sheet(isPresented: $showCreateSheet) {
                 CreatePlaylistSheet()

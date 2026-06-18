@@ -36,8 +36,27 @@ struct PlayShuffleButtons: View {
             .buttonStyle(.borderedProminent)
             .disabled(songs.isEmpty)
 
+            shuffleButton
+        }
+    }
+
+    @ViewBuilder
+    private var shuffleButton: some View {
+        if engine.shuffleEnabled {
             Button {
-                Task { await engine.playShuffled(songs) }
+                engine.shuffleEnabled = false
+            } label: {
+                Label("Shuffle", systemImage: "shuffle")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+        } else {
+            Button {
+                if currentInScope {
+                    engine.shuffleEnabled = true
+                } else {
+                    Task { await engine.playShuffled(songs) }
+                }
             } label: {
                 Label("Shuffle", systemImage: "shuffle")
                     .frame(maxWidth: .infinity)

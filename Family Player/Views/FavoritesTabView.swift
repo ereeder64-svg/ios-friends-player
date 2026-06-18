@@ -47,6 +47,17 @@ struct FavoritesTabView: View {
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: "Search favorites"
             )
+            .toolbar {
+                if !favoriteSongs.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            BulkDownloadMenuItems(songs: Array(favoriteSongs), label: "All Favorites")
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                    }
+                }
+            }
             .overlay {
                 if favoriteSongs.isEmpty {
                     ContentUnavailableView(

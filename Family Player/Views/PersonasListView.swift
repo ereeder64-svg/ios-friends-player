@@ -58,6 +58,17 @@ struct PersonasListView: View {
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Search personas"
         )
+        .toolbar {
+            if !allSongs.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        BulkDownloadMenuItems(songs: allSongs, label: "All Personas")
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+        }
         .overlay {
             if personas.isEmpty {
                 ContentUnavailableView(

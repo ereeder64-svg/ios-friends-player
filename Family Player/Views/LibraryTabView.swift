@@ -10,6 +10,7 @@ struct LibraryTabView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(LibraryScanner.self) private var scanner
     @Environment(ShareAccessCoordinator.self) private var coordinator
+    @Environment(DownloadManager.self) private var downloads
 
     @Query private var personas: [Persona]
     @Query private var albums: [Album]
@@ -53,6 +54,10 @@ struct LibraryTabView: View {
                     } label: {
                         Label("Manage Shares", systemImage: "folder.badge.gearshape")
                     }
+                }
+
+                Section("Downloads") {
+                    BulkDownloadMenuItems(songs: songs, label: "All Songs")
                 }
 
                 Section {

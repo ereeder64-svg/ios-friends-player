@@ -225,13 +225,27 @@ final class PlaybackEngine {
         isLoading = true
         currentSong = song
 
+        // Stop the previous track immediately. Otherwise the old audio keeps
+        // playing while we wait for the new file to materialize from iCloud,
+        // which can take up to 60s on cellular and makes the UI/audio diverge.
+        player.pause()
+        player.removeAllItems()
+        isPlaying = false
+
         if song.downloadCachePath == nil {
-            await ensureLocallyAvailable(url: songURL)
+            let available = await ensureLocallyAvailable(url: songURL)
+            if !available {
+                if lastError == nil {
+                    lastError = "Couldn't download \"\(song.title)\" from iCloud. Connect to Wi-Fi, or download the song first for offline cellular playback."
+                }
+                isLoading = false
+                currentSong = nil
+                return
+            }
         }
 
         try? AVAudioSession.sharedInstance().setActive(true)
         let item = AVPlayerItem(url: songURL)
-        player.removeAllItems()
         player.insert(item, after: nil)
         observeStatus(of: item)
         player.play()
@@ -310,23 +324,36 @@ final class PlaybackEngine {
 
     // MARK: - iCloud materialization (user-initiated play OK)
 
-    private func ensureLocallyAvailable(url: URL) async {
+    private func ensureLocallyAvailable(url: URL) async -> Bool {
         let keys: Set<URLResourceKey> = [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey]
         guard let values = try? url.resourceValues(forKeys: keys),
-              values.isUbiquitousItem == true else { return }
-        if values.ubiquitousItemDownloadingStatus == .current { return }
+              values.isUbiquitousItem == true else { return true }
+        if values.ubiquitousItemDownloadingStatus == .current ||
+           values.ubiquitousItemDownloadingStatus == .downloaded { return true }
 
-        try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+        do {
+            try FileManager.default.startDownloadingUbiquitousItem(at: url)
+        } catch {
+            lastError = "iCloud download failed: \(error.localizedDescription)"
+            return false
+        }
+
         // Poll up to 60 seconds — Wi-Fi typically finishes in 1-3s but cellular
-        // can take 15-45s depending on signal strength.
+        // can take 15-45s. Accept either .current or .downloaded so cellular
+        // playback can start as soon as enough bytes are local.
         for _ in 0..<60 {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             if let v = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey]),
-               v.ubiquitousItemDownloadingStatus == .current {
-                return
+               v.ubiquitousItemDownloadingStatus == .current ||
+               v.ubiquitousItemDownloadingStatus == .downloaded {
+                return true
             }
         }
-        lastError = "Couldn't download from iCloud. Check your connection and try again."
+        return false
+    }
+
+    func clearLastError() {
+        lastError = nil
     }
 
     // MARK: - Observers

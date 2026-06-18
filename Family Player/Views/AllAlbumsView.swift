@@ -57,6 +57,17 @@ struct AllAlbumsView: View {
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Search albums or personas"
         )
+        .toolbar {
+            if !allSongs.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        BulkDownloadMenuItems(songs: allSongs, label: "All Albums")
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+        }
         .overlay {
             if albums.isEmpty {
                 ContentUnavailableView("No Albums", systemImage: "square.stack")
