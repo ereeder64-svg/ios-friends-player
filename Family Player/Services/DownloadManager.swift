@@ -12,6 +12,7 @@ import Observation
 final class DownloadManager {
 
     private(set) var inFlightStableIDs: Set<String> = []
+    private var scheduledStableIDs: Set<String> = []
     weak var coordinator: ShareAccessCoordinator?
 
     nonisolated static func downloadDirectory() -> URL {
@@ -33,6 +34,7 @@ final class DownloadManager {
         guard let coordinator,
               let shareURL = coordinator.url(for: song.shareName) else { return }
 
+        scheduledStableIDs.insert(song.stableID)
         inFlightStableIDs.insert(song.stableID)
         defer { inFlightStableIDs.remove(song.stableID) }
 
@@ -44,7 +46,18 @@ final class DownloadManager {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let destURL = Self.destinationURL(for: song)
 
-        guard await LibraryScanner.coordinatedCopy(from: sourceURL, to: destURL) else { return }
+        guard await LibraryScanner.coordinatedCopy(from: sourceURL, to: destURL) else {
+            scheduledStableIDs.remove(song.stableID)
+            return
+        }
+
+        // If the user requested removal while this was downloading, honor it:
+        // delete the file we just wrote instead of recording it as downloaded.
+        if !scheduledStableIDs.contains(song.stableID) {
+            try? FileManager.default.removeItem(at: destURL)
+            return
+        }
+        scheduledStableIDs.remove(song.stableID)
 
         song.downloadCachePath = destURL.path
         song.downloadedAt = Date()
@@ -56,6 +69,7 @@ final class DownloadManager {
     }
 
     func remove(song: Song) {
+        scheduledStableIDs.remove(song.stableID)
         if let path = song.downloadCachePath {
             try? FileManager.default.removeItem(atPath: path)
         }
@@ -69,11 +83,23 @@ final class DownloadManager {
 
     func download(songs: [Song]) async {
         for song in songs where song.downloadCachePath == nil {
+            scheduledStableIDs.insert(song.stableID)
+        }
+        for song in songs {
+            // Cancellation: if remove() was called for this song, skip it.
+            guard scheduledStableIDs.contains(song.stableID) else { continue }
+            guard song.downloadCachePath == nil else {
+                scheduledStableIDs.remove(song.stableID)
+                continue
+            }
             await download(song: song)
         }
     }
 
     func remove(songs: [Song]) {
+        for song in songs {
+            scheduledStableIDs.remove(song.stableID)
+        }
         for song in songs where song.downloadCachePath != nil {
             remove(song: song)
         }
