@@ -56,6 +56,10 @@ struct LibraryTabView: View {
                     }
                 }
 
+                Section("App Icon") {
+                    AppIconPicker()
+                }
+
                 Section("Downloads") {
                     BulkDownloadMenuItems(songs: songs, label: "All Songs")
                     let downloaded = songs.filter { $0.downloadCachePath != nil }.count
