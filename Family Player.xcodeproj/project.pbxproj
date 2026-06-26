@@ -6,7 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		21AECC952FEDFC6F0082ABFC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21AECC942FEDFC6F0082ABFC /* WidgetKit.framework */; };
+		21AECC972FEDFC6F0082ABFC /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21AECC962FEDFC6F0082ABFC /* SwiftUI.framework */; };
+		21AECCA62FEDFC710082ABFC /* FamilyPlayerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 21AECC922FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		21AECCA42FEDFC710082ABFC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 21F4B4502FE176D200D79A59 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 21AECC912FEDFC6F0082ABFC;
+			remoteInfo = FamilyPlayerWidgetExtension;
+		};
 		21F4B4682FE176D300D79A59 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 21F4B4502FE176D200D79A59 /* Project object */;
@@ -23,13 +36,47 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		21AECCAB2FEDFC710082ABFC /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				21AECCA62FEDFC710082ABFC /* FamilyPlayerWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		21AECC922FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FamilyPlayerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		21AECC942FEDFC6F0082ABFC /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		21AECC962FEDFC6F0082ABFC /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		21AECCAD2FEE017A0082ABFC /* FamilyPlayerWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FamilyPlayerWidgetExtension.entitlements; sourceTree = "<group>"; };
 		21F4B4582FE176D200D79A59 /* Family Player.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Family Player.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		21F4B4672FE176D300D79A59 /* Family PlayerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Family PlayerTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		21F4B4712FE176D300D79A59 /* Family PlayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Family PlayerUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		21AECCAA2FEDFC710082ABFC /* Exceptions for "FamilyPlayerWidget" folder in "FamilyPlayerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 21AECC912FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension */;
+		};
+		21AECCB62FEE06300082ABFC /* Exceptions for "Family Player" folder in "FamilyPlayerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/AppGroupConstants.swift,
+				Shared/NowPlayingSnapshot.swift,
+				Shared/PlaybackIntents.swift,
+			);
+			target = 21AECC912FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension */;
+		};
 		21F4B4A82FE18F2500D79A59 /* Exceptions for "Family Player" folder in "Family Player" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -40,10 +87,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		21AECC982FEDFC6F0082ABFC /* FamilyPlayerWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				21AECCAA2FEDFC710082ABFC /* Exceptions for "FamilyPlayerWidget" folder in "FamilyPlayerWidgetExtension" target */,
+			);
+			path = FamilyPlayerWidget;
+			sourceTree = "<group>";
+		};
 		21F4B45A2FE176D200D79A59 /* Family Player */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				21F4B4A82FE18F2500D79A59 /* Exceptions for "Family Player" folder in "Family Player" target */,
+				21AECCB62FEE06300082ABFC /* Exceptions for "Family Player" folder in "FamilyPlayerWidgetExtension" target */,
 			);
 			path = "Family Player";
 			sourceTree = "<group>";
@@ -61,6 +117,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		21AECC8F2FEDFC6F0082ABFC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				21AECC972FEDFC6F0082ABFC /* SwiftUI.framework in Frameworks */,
+				21AECC952FEDFC6F0082ABFC /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		21F4B4552FE176D200D79A59 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -85,12 +150,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		21AECC932FEDFC6F0082ABFC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				21AECC942FEDFC6F0082ABFC /* WidgetKit.framework */,
+				21AECC962FEDFC6F0082ABFC /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		21F4B44F2FE176D200D79A59 = {
 			isa = PBXGroup;
 			children = (
+				21AECCAD2FEE017A0082ABFC /* FamilyPlayerWidgetExtension.entitlements */,
 				21F4B45A2FE176D200D79A59 /* Family Player */,
 				21F4B46A2FE176D300D79A59 /* Family PlayerTests */,
 				21F4B4742FE176D300D79A59 /* Family PlayerUITests */,
+				21AECC982FEDFC6F0082ABFC /* FamilyPlayerWidget */,
+				21AECC932FEDFC6F0082ABFC /* Frameworks */,
 				21F4B4592FE176D200D79A59 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -101,6 +178,7 @@
 				21F4B4582FE176D200D79A59 /* Family Player.app */,
 				21F4B4672FE176D300D79A59 /* Family PlayerTests.xctest */,
 				21F4B4712FE176D300D79A59 /* Family PlayerUITests.xctest */,
+				21AECC922FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -108,6 +186,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		21AECC912FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 21AECCA72FEDFC710082ABFC /* Build configuration list for PBXNativeTarget "FamilyPlayerWidgetExtension" */;
+			buildPhases = (
+				21AECC8E2FEDFC6F0082ABFC /* Sources */,
+				21AECC8F2FEDFC6F0082ABFC /* Frameworks */,
+				21AECC902FEDFC6F0082ABFC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				21AECC982FEDFC6F0082ABFC /* FamilyPlayerWidget */,
+			);
+			name = FamilyPlayerWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = FamilyPlayerWidgetExtension;
+			productReference = 21AECC922FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		21F4B4572FE176D200D79A59 /* Family Player */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 21F4B47B2FE176D300D79A59 /* Build configuration list for PBXNativeTarget "Family Player" */;
@@ -115,10 +215,12 @@
 				21F4B4542FE176D200D79A59 /* Sources */,
 				21F4B4552FE176D200D79A59 /* Frameworks */,
 				21F4B4562FE176D200D79A59 /* Resources */,
+				21AECCAB2FEDFC710082ABFC /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				21AECCA52FEDFC710082ABFC /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				21F4B45A2FE176D200D79A59 /* Family Player */,
@@ -186,6 +288,9 @@
 				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
+					21AECC912FEDFC6F0082ABFC = {
+						CreatedOnToolsVersion = 26.5;
+					};
 					21F4B4572FE176D200D79A59 = {
 						CreatedOnToolsVersion = 26.5;
 					};
@@ -216,11 +321,19 @@
 				21F4B4572FE176D200D79A59 /* Family Player */,
 				21F4B4662FE176D300D79A59 /* Family PlayerTests */,
 				21F4B4702FE176D300D79A59 /* Family PlayerUITests */,
+				21AECC912FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		21AECC902FEDFC6F0082ABFC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		21F4B4562FE176D200D79A59 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -245,6 +358,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		21AECC8E2FEDFC6F0082ABFC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		21F4B4542FE176D200D79A59 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -269,6 +389,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		21AECCA52FEDFC710082ABFC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 21AECC912FEDFC6F0082ABFC /* FamilyPlayerWidgetExtension */;
+			targetProxy = 21AECCA42FEDFC710082ABFC /* PBXContainerItemProxy */;
+		};
 		21F4B4692FE176D300D79A59 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 21F4B4572FE176D200D79A59 /* Family Player */;
@@ -282,6 +407,68 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		21AECCA82FEDFC710082ABFC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FamilyPlayerWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J4KWXV82LA;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FamilyPlayerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FamilyPlayerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Family-Player.FamilyPlayerWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		21AECCA92FEDFC710082ABFC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FamilyPlayerWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J4KWXV82LA;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FamilyPlayerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FamilyPlayerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Family-Player.FamilyPlayerWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		21F4B4792FE176D300D79A59 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -408,6 +595,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = "Family Player/Family Player.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J4KWXV82LA;
@@ -443,6 +631,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = "Family Player/Family Player.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J4KWXV82LA;
@@ -558,6 +747,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		21AECCA72FEDFC710082ABFC /* Build configuration list for PBXNativeTarget "FamilyPlayerWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				21AECCA82FEDFC710082ABFC /* Debug */,
+				21AECCA92FEDFC710082ABFC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		21F4B4532FE176D200D79A59 /* Build configuration list for PBXProject "Family Player" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

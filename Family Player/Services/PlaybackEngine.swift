@@ -9,6 +9,7 @@ import MediaPlayer
 import Observation
 import SwiftData
 import UIKit
+import WidgetKit
 
 @MainActor
 @Observable
@@ -55,7 +56,10 @@ final class PlaybackEngine {
     private var statusObservation: NSKeyValueObservation?
     private var activeShareScopes: Set<String> = []
 
+    nonisolated(unsafe) static weak var sharedEngine: PlaybackEngine?
+
     init() {
+        Self.sharedEngine = self
         let defaults = UserDefaults.standard
         shuffleEnabled = defaults.bool(forKey: Self.shuffleKey)
         loopEnabled = defaults.bool(forKey: Self.loopKey)
@@ -64,6 +68,71 @@ final class PlaybackEngine {
         installPeriodicTimeObserver()
         installEndObserver()
         installRemoteCommandTargets()
+        installWidgetIntentObservers()
+    }
+
+    // MARK: - Widget integration
+
+    private func installWidgetIntentObservers() {
+        let center = CFNotificationCenterGetDarwinNotifyCenter()
+        let callback: CFNotificationCallback = { _, _, name, _, _ in
+            guard let nameRaw = name?.rawValue as String? else { return }
+            DispatchQueue.main.async {
+                guard let engine = PlaybackEngine.sharedEngine else { return }
+                switch nameRaw {
+                case AppGroupConstants.Darwin.playPause:
+                    engine.togglePlayPause()
+                case AppGroupConstants.Darwin.next:
+                    Task { @MainActor in await engine.playNext() }
+                case AppGroupConstants.Darwin.previous:
+                    Task { @MainActor in await engine.playPrevious() }
+                default: break
+                }
+            }
+        }
+
+        for name in [AppGroupConstants.Darwin.playPause,
+                     AppGroupConstants.Darwin.next,
+                     AppGroupConstants.Darwin.previous] {
+            CFNotificationCenterAddObserver(
+                center, nil, callback,
+                name as CFString, nil, .deliverImmediately
+            )
+        }
+    }
+
+    func forceRepublishSnapshot() {
+        publishWidgetSnapshot()
+    }
+
+    private var lastDisplayedSong: Song?
+
+    private func publishWidgetSnapshot() {
+        if let song = currentSong {
+            lastDisplayedSong = song
+        }
+        let displaySong = currentSong ?? lastDisplayedSong
+
+        let snap = NowPlayingSnapshot(
+            hasSong: displaySong != nil,
+            songTitle: displaySong?.title ?? "",
+            personaName: displaySong?.album?.persona?.name ?? "",
+            albumTitle: displaySong?.album?.title ?? "",
+            isPlaying: isPlaying && currentSong != nil,
+            updatedAt: Date()
+        )
+        snap.save()
+
+        if let artPath = displaySong?.album?.artworkCachePath,
+           let sharedURL = AppGroupConstants.sharedArtworkURL(),
+           FileManager.default.fileExists(atPath: artPath) {
+            try? FileManager.default.removeItem(at: sharedURL)
+            try? FileManager.default.copyItem(at: URL(fileURLWithPath: artPath), to: sharedURL)
+        } else if displaySong == nil, let sharedURL = AppGroupConstants.sharedArtworkURL() {
+            try? FileManager.default.removeItem(at: sharedURL)
+        }
+
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // MARK: - Public API
@@ -131,6 +200,7 @@ final class PlaybackEngine {
             isPlaying = true
         }
         updateNowPlayingInfoElapsed()
+        publishWidgetSnapshot()
     }
 
     func stop() {
@@ -475,6 +545,7 @@ final class PlaybackEngine {
         }
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        publishWidgetSnapshot()
     }
 
     private func updateNowPlayingInfoElapsed() {
