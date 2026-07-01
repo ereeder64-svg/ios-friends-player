@@ -119,19 +119,7 @@ struct AlbumDetailView: View {
 
                 LazyVStack(spacing: 0) {
                     ForEach(Array(sortedSongs.enumerated()), id: \.element.stableID) { idx, song in
-                        HStack(spacing: 0) {
-                            Button {
-                                Task { await engine.play(song: song, in: sortedSongs) }
-                            } label: {
-                                AlbumTrackRow(
-                                    song: song,
-                                    displayNumber: song.trackNumber ?? (idx + 1)
-                                )
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            SongActionsMenu(song: song)
-                        }
+                        SongListRow(song: song, scope: sortedSongs, style: .dark)
                         if idx < sortedSongs.count - 1 {
                             Divider()
                                 .background(.white.opacity(0.15))
@@ -141,7 +129,7 @@ struct AlbumDetailView: View {
                 }
                 .padding(.horizontal)
 
-                AlbumFooter(songs: sortedSongs)
+                SongsCountFooter(songs: sortedSongs, style: .dark)
                     .padding(.horizontal)
                     .padding(.top, 16)
                     .padding(.bottom, 32)
@@ -184,81 +172,4 @@ struct AlbumDetailView: View {
     }
 }
 
-struct AlbumTrackRow: View {
-    let song: Song
-    let displayNumber: Int
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Text("\(displayNumber)")
-                .monospacedDigit()
-                .foregroundStyle(.white.opacity(0.55))
-                .frame(width: 22, alignment: .trailing)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(song.title)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                if song.hasLyrics {
-                    Text("Lyrics")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-            }
-            Spacer()
-            if song.isFavorite {
-                Image(systemName: "heart.fill")
-                    .font(.caption)
-                    .foregroundStyle(.pink)
-            }
-            if song.downloadCachePath != nil {
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-            if song.duration > 0 {
-                Text(formatDuration(song.duration))
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .monospacedDigit()
-            }
-        }
-        .padding(.vertical, 10)
-    }
-
-    private func formatDuration(_ seconds: Double) -> String {
-        let total = Int(seconds.rounded())
-        return String(format: "%d:%02d", total / 60, total % 60)
-    }
-}
-struct AlbumFooter: View {
-    let songs: [Song]
-
-    private var totalSeconds: Double {
-        songs.reduce(0) { $0 + ($1.duration > 0 ? $1.duration : 0) }
-    }
-
-    var body: some View {
-        Text(footerText)
-            .font(.footnote)
-            .foregroundStyle(.white.opacity(0.55))
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var footerText: String {
-        let count = songs.count
-        let songsStr = "\(count) song\(count == 1 ? "" : "s")"
-        guard totalSeconds > 0 else { return songsStr }
-
-        let total = Int(totalSeconds.rounded())
-        let hours = total / 3600
-        let minutes = (total % 3600) / 60
-        let durStr: String
-        if hours > 0 {
-            durStr = "\(hours) hour\(hours == 1 ? "" : "s") \(minutes) minute\(minutes == 1 ? "" : "s")"
-        } else {
-            durStr = "\(minutes) minute\(minutes == 1 ? "" : "s")"
-        }
-        return "\(songsStr), \(durStr)"
-    }
-}
 

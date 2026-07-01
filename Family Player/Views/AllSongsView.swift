@@ -66,6 +66,12 @@ struct AllSongsView: View {
 
 struct SongsCountFooter: View {
     let songs: [Song]
+    var style: FooterStyle = .light
+
+    enum FooterStyle {
+        case light   // dark text on light background (list tabs)
+        case dark    // light text on dark ambient background (album/playlist detail)
+    }
 
     private var totalSeconds: Double {
         songs.reduce(0) { $0 + ($1.duration > 0 ? $1.duration : 0) }
@@ -90,7 +96,7 @@ struct SongsCountFooter: View {
     var body: some View {
         Text(text)
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(style == .dark ? Color.white.opacity(0.55) : Color.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

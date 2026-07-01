@@ -10,13 +10,32 @@ struct SongListRow: View {
     @Environment(PlaybackEngine.self) private var engine
     let song: Song
     let scope: [Song]
+    var style: RowStyle = .light
+    var fromPlaylist: Playlist? = nil
+
+    enum RowStyle {
+        case light   // dark text on light background
+        case dark    // light text on dark ambient background
+    }
+
+    private var titleColor: Color {
+        style == .dark ? .white : .primary
+    }
+
+    private var subtitleColor: Color {
+        style == .dark ? .white.opacity(0.65) : .secondary
+    }
 
     var body: some View {
         HStack(spacing: 0) {
             Button {
                 Task { await engine.play(song: song, in: scope) }
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(song.isFavorite ? Color.red : Color.clear)
+                        .frame(width: 6)
                     AlbumArtworkView(
                         cachePath: song.album?.artworkCachePath,
                         title: song.album?.title ?? song.title,
@@ -26,6 +45,7 @@ struct SongListRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(song.title)
                             .font(.footnote.weight(.semibold))
+                            .foregroundStyle(titleColor)
                             .lineLimit(1)
                         HStack(spacing: 4) {
                             if let persona = song.album?.persona?.name {
@@ -37,34 +57,18 @@ struct SongListRow: View {
                             }
                         }
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(subtitleColor)
                         .lineLimit(1)
                     }
-                    Spacer(minLength: 8)
-                    if song.isFavorite {
-                        Image(systemName: "heart.fill")
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    }
-                    DownloadStatusIcon(song: song)
-                    if song.duration > 0 {
-                        Text(formatDuration(song.duration))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
+                    Spacer(minLength: 6)
+                    DownloadStatusIcon(song: song, style: style)
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
-            SongActionsMenu(song: song)
+            SongActionsMenu(song: song, fromPlaylist: fromPlaylist, style: style)
         }
-    }
-
-    private func formatDuration(_ seconds: Double) -> String {
-        let total = Int(seconds.rounded())
-        return String(format: "%d:%02d", total / 60, total % 60)
     }
 }
 
@@ -108,14 +112,15 @@ struct DownloadMenuButton: View {
 struct DownloadStatusIcon: View {
     @Environment(DownloadManager.self) private var downloads
     let song: Song
+    var style: SongListRow.RowStyle = .light
 
     var body: some View {
         if downloads.isDownloading(song) {
             ProgressView().controlSize(.mini)
         } else if song.downloadCachePath != nil {
             Image(systemName: "arrow.down.circle.fill")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.caption2)
+                .foregroundStyle(style == .dark ? Color.white.opacity(0.7) : Color.secondary)
         }
     }
 }

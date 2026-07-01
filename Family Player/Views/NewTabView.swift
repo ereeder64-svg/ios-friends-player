@@ -41,6 +41,12 @@ struct NewTabView: View {
                         .padding(.top, 8)
 
                     SongListSection(songs: filteredSongs)
+
+                    if !filteredSongs.isEmpty {
+                        SongsCountFooter(songs: filteredSongs)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 4)
+                    }
                 }
                 .padding(.bottom, 16)
             }

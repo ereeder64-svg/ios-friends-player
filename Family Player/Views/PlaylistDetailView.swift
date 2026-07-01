@@ -65,19 +65,7 @@ struct PlaylistDetailView: View {
 
                 LazyVStack(spacing: 0) {
                     ForEach(Array(sortedSongs.enumerated()), id: \.element.stableID) { idx, song in
-                        HStack(spacing: 0) {
-                            Button {
-                                Task { await engine.play(song: song, in: sortedSongs) }
-                            } label: {
-                                AlbumTrackRow(
-                                    song: song,
-                                    displayNumber: idx + 1
-                                )
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            SongActionsMenu(song: song, fromPlaylist: playlist)
-                        }
+                        SongListRow(song: song, scope: sortedSongs, style: .dark, fromPlaylist: playlist)
                         if idx < sortedSongs.count - 1 {
                             Divider()
                                 .background(.white.opacity(0.15))
@@ -87,7 +75,7 @@ struct PlaylistDetailView: View {
                 }
                 .padding(.horizontal)
 
-                AlbumFooter(songs: sortedSongs)
+                SongsCountFooter(songs: sortedSongs, style: .dark)
                     .padding(.horizontal)
                     .padding(.top, 16)
                     .padding(.bottom, 32)

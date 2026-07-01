@@ -11,9 +11,11 @@ struct SongActionsMenu: View {
     @Environment(\.modelContext) private var modelContext
     let song: Song
     var fromPlaylist: Playlist? = nil
+    var style: SongListRow.RowStyle = .light
 
     @State private var showAddToPlaylist = false
     @State private var showLyrics = false
+    @State private var showAlbum = false
 
     var body: some View {
         Menu {
@@ -53,6 +55,14 @@ struct SongActionsMenu: View {
                 Label("Refresh Lyrics", systemImage: "arrow.clockwise")
             }
 
+            if song.album != nil {
+                Button {
+                    showAlbum = true
+                } label: {
+                    Label("Go to Album", systemImage: "square.stack")
+                }
+            }
+
             if let playlist = fromPlaylist {
                 Divider()
                 Button(role: .destructive) {
@@ -64,7 +74,7 @@ struct SongActionsMenu: View {
         } label: {
             Image(systemName: "ellipsis")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(style == .dark ? Color.white : Color.primary)
                 .frame(width: 32, height: 32)
                 .contentShape(Rectangle())
         }
@@ -73,6 +83,13 @@ struct SongActionsMenu: View {
         }
         .sheet(isPresented: $showLyrics) {
             LyricsSheet(song: song)
+        }
+        .sheet(isPresented: $showAlbum) {
+            if let album = song.album {
+                NavigationStack {
+                    AlbumDetailView(album: album)
+                }
+            }
         }
     }
 

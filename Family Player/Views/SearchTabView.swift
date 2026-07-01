@@ -41,6 +41,9 @@ struct SearchTabView: View {
                     PlayShuffleButtons(songs: results)
                         .padding(.horizontal, 20)
                     SongListSection(songs: results)
+                    SongsCountFooter(songs: results)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
                 }
             }
             .padding(.bottom, 16)
