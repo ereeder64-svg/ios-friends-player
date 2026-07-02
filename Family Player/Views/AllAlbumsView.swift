@@ -119,7 +119,7 @@ struct AlbumDetailView: View {
 
                 LazyVStack(spacing: 0) {
                     ForEach(Array(sortedSongs.enumerated()), id: \.element.stableID) { idx, song in
-                        SongListRow(song: song, scope: sortedSongs, style: .dark)
+                        SongListRow(song: song, scope: sortedSongs, style: .dark, subtitleMode: .none)
                         if idx < sortedSongs.count - 1 {
                             Divider()
                                 .background(.white.opacity(0.15))

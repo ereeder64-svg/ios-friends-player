@@ -541,6 +541,15 @@ final class LibraryScanner {
         let descriptor = FetchDescriptor<Song>()
         guard let songs = try? context.fetch(descriptor) else { return }
         for song in songs where !currentStableIDs.contains(song.stableID) {
+            let doomedID = song.stableID
+            let entryDescriptor = FetchDescriptor<PlaylistEntry>(
+                predicate: #Predicate<PlaylistEntry> { $0.song?.stableID == doomedID }
+            )
+            if let entries = try? context.fetch(entryDescriptor) {
+                for entry in entries {
+                    context.delete(entry)
+                }
+            }
             context.delete(song)
         }
         let albumDescriptor = FetchDescriptor<Album>()

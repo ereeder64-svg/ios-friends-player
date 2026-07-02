@@ -206,6 +206,15 @@ struct ShareManagementView: View {
                 if let path = song.downloadCachePath {
                     try? FileManager.default.removeItem(atPath: path)
                 }
+                let doomedID = song.stableID
+                let entryDescriptor = FetchDescriptor<PlaylistEntry>(
+                    predicate: #Predicate<PlaylistEntry> { $0.song?.stableID == doomedID }
+                )
+                if let entries = try? modelContext.fetch(entryDescriptor) {
+                    for entry in entries {
+                        modelContext.delete(entry)
+                    }
+                }
                 modelContext.delete(song)
             }
         }

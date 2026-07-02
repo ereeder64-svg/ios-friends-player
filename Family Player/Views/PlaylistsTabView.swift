@@ -24,15 +24,29 @@ struct PlaylistsTabView: View {
     }
 
     private var allSongs: [Song] {
-        var seen = Set<String>()
+        // PlaylistEntry.song has no inverse relationship on Song, so orphans can
+        // slip in when a song file goes missing during a scan. Build a set of
+        // known-good song IDs and use it as a safety net so we never touch a
+        // faulted Song's real properties.
+        guard let allSongObjects = try? modelContext.fetch(FetchDescriptor<Song>()) else { return [] }
+        let validIDs = Set(allSongObjects.map { $0.persistentModelID })
+
+        let entryDescriptor = FetchDescriptor<PlaylistEntry>(
+            predicate: #Predicate<PlaylistEntry> { $0.song?.stableID != nil }
+        )
+        guard let entries = try? modelContext.fetch(entryDescriptor) else { return [] }
+        let visiblePlaylistIDs = Set(filteredPlaylists.map { $0.persistentModelID })
+
+        var seen = Set<PersistentIdentifier>()
         var result: [Song] = []
-        for playlist in filteredPlaylists {
-            let sorted = playlist.entries.sorted { $0.position < $1.position }
-            for entry in sorted {
-                if let song = entry.song, seen.insert(song.stableID).inserted {
-                    result.append(song)
-                }
-            }
+        for entry in entries {
+            guard let playlistID = entry.playlist?.persistentModelID,
+                  visiblePlaylistIDs.contains(playlistID),
+                  let song = entry.song,
+                  validIDs.contains(song.persistentModelID),
+                  seen.insert(song.persistentModelID).inserted
+            else { continue }
+            result.append(song)
         }
         return result
     }

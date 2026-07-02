@@ -14,12 +14,32 @@ struct PlaylistDetailView: View {
     @State private var showRenameSheet = false
     @State private var showDeleteConfirm = false
 
+    private var validEntries: [PlaylistEntry] {
+        // Fresh store-level fetch that filters out orphaned entries whose song is
+        // gone; the extra validIDs check is a safety net if the predicate doesn't
+        // catch dangling in-memory faults.
+        guard let allSongObjects = try? modelContext.fetch(FetchDescriptor<Song>()) else { return [] }
+        let validIDs = Set(allSongObjects.map { $0.persistentModelID })
+
+        let playlistID = playlist.persistentModelID
+        let descriptor = FetchDescriptor<PlaylistEntry>(
+            predicate: #Predicate<PlaylistEntry> { entry in
+                entry.playlist?.persistentModelID == playlistID && entry.song?.stableID != nil
+            }
+        )
+        guard let entries = try? modelContext.fetch(descriptor) else { return [] }
+        return entries.filter { entry in
+            guard let song = entry.song else { return false }
+            return validIDs.contains(song.persistentModelID)
+        }
+    }
+
     private var sortedEntries: [PlaylistEntry] {
         switch playlist.sortMode {
         case .alpha:
-            return playlist.entries.sorted { ($0.song?.title ?? "") < ($1.song?.title ?? "") }
+            return validEntries.sorted { ($0.song?.title ?? "") < ($1.song?.title ?? "") }
         case .dateAdded:
-            return playlist.entries.sorted { $0.dateAdded < $1.dateAdded }
+            return validEntries.sorted { $0.dateAdded < $1.dateAdded }
         }
     }
 
@@ -30,7 +50,7 @@ struct PlaylistDetailView: View {
     private var collageArts: [String] {
         var seen = Set<String>()
         var result: [String] = []
-        for entry in playlist.entries.sorted(by: { $0.position < $1.position }) {
+        for entry in validEntries.sorted(by: { $0.position < $1.position }) {
             if let path = entry.song?.album?.artworkCachePath, seen.insert(path).inserted {
                 result.append(path)
                 if result.count == 4 { break }
@@ -65,7 +85,7 @@ struct PlaylistDetailView: View {
 
                 LazyVStack(spacing: 0) {
                     ForEach(Array(sortedSongs.enumerated()), id: \.element.stableID) { idx, song in
-                        SongListRow(song: song, scope: sortedSongs, style: .dark, fromPlaylist: playlist)
+                        SongListRow(song: song, scope: sortedSongs, style: .dark, subtitleMode: .artistOnly, fromPlaylist: playlist)
                         if idx < sortedSongs.count - 1 {
                             Divider()
                                 .background(.white.opacity(0.15))

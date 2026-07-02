@@ -11,11 +11,18 @@ struct SongListRow: View {
     let song: Song
     let scope: [Song]
     var style: RowStyle = .light
+    var subtitleMode: SubtitleMode = .artistAndAlbum
     var fromPlaylist: Playlist? = nil
 
     enum RowStyle {
         case light   // dark text on light background
         case dark    // light text on dark ambient background
+    }
+
+    enum SubtitleMode {
+        case artistAndAlbum  // "Artist • Album" — default
+        case artistOnly       // just the persona/artist
+        case none            // no subtitle; title may wrap to two lines
     }
 
     private var titleColor: Color {
@@ -24,6 +31,10 @@ struct SongListRow: View {
 
     private var subtitleColor: Color {
         style == .dark ? .white.opacity(0.65) : .secondary
+    }
+
+    private var titleLineLimit: Int {
+        subtitleMode == .none ? 2 : 1
     }
 
     var body: some View {
@@ -46,19 +57,8 @@ struct SongListRow: View {
                         Text(song.title)
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(titleColor)
-                            .lineLimit(1)
-                        HStack(spacing: 4) {
-                            if let persona = song.album?.persona?.name {
-                                Text(persona)
-                            }
-                            if let albumTitle = song.album?.title {
-                                Text("\u{2022}")
-                                Text(albumTitle)
-                            }
-                        }
-                        .font(.caption)
-                        .foregroundStyle(subtitleColor)
-                        .lineLimit(1)
+                            .lineLimit(titleLineLimit)
+                        subtitle
                     }
                     Spacer(minLength: 6)
                     DownloadStatusIcon(song: song, style: style)
@@ -68,6 +68,34 @@ struct SongListRow: View {
             .buttonStyle(.plain)
 
             SongActionsMenu(song: song, fromPlaylist: fromPlaylist, style: style)
+        }
+    }
+
+    @ViewBuilder
+    private var subtitle: some View {
+        switch subtitleMode {
+        case .artistAndAlbum:
+            HStack(spacing: 4) {
+                if let persona = song.album?.persona?.name {
+                    Text(persona)
+                }
+                if let albumTitle = song.album?.title {
+                    Text("\u{2022}")
+                    Text(albumTitle)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(subtitleColor)
+            .lineLimit(1)
+        case .artistOnly:
+            if let persona = song.album?.persona?.name {
+                Text(persona)
+                    .font(.caption)
+                    .foregroundStyle(subtitleColor)
+                    .lineLimit(1)
+            }
+        case .none:
+            EmptyView()
         }
     }
 }

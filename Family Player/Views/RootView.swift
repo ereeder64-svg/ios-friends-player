@@ -41,7 +41,22 @@ struct RootView: View {
             guard !didResolve else { return }
             didResolve = true
             _ = coordinator.resolveAll(context: modelContext)
+            purgeOrphanedPlaylistEntries()
             hasCompletedSetup = !coordinator.resolvedURLs.isEmpty
         }
+    }
+
+    // PlaylistEntry has no inverse relationship on Song, so previous sessions'
+    // song deletions may have left entries whose `song` accessor crashes on read.
+    // Purge those before any view tries to read them.
+    private func purgeOrphanedPlaylistEntries() {
+        let descriptor = FetchDescriptor<PlaylistEntry>(
+            predicate: #Predicate<PlaylistEntry> { $0.song?.stableID == nil }
+        )
+        guard let orphans = try? modelContext.fetch(descriptor), !orphans.isEmpty else { return }
+        for entry in orphans {
+            modelContext.delete(entry)
+        }
+        try? modelContext.save()
     }
 }
