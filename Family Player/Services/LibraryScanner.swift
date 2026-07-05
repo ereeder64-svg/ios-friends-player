@@ -63,12 +63,20 @@ final class LibraryScanner {
 
         var allWorkItems: [SongWorkItem] = []
         var albumFoldersSeen: [String: URL] = [:]
+        // Only shares whose security scope actually started this pass are
+        // eligible for pruning below. A share that fails to (re)gain access
+        // on a given launch would otherwise enumerate zero items and look
+        // "missing", causing pruneMissing to wrongly delete everything in
+        // it — including albums that are still very much there.
+        var scannedShareNames: Set<String> = []
 
         for (shareName, shareURL) in coordinator.resolvedURLs {
             progress.currentShare = shareName
-            if shareURL.startAccessingSecurityScopedResource() {
-                startedScopes.append(shareURL)
+            guard shareURL.startAccessingSecurityScopedResource() else {
+                continue
             }
+            startedScopes.append(shareURL)
+            scannedShareNames.insert(shareName)
 
             let rawItems = await Task.detached(priority: .userInitiated) { [shareName, shareURL, publicShareName = self.publicShareName, defaultPersona = self.defaultPersona] in
                 Self.enumerateShare(
@@ -101,7 +109,11 @@ final class LibraryScanner {
 
         await cacheArtwork(for: albumFoldersSeen, context: context)
         await cachePersonaArtwork(shareRoots: coordinator.resolvedURLs, context: context)
-        await pruneMissing(currentStableIDs: Set(allWorkItems.map(stableID)), context: context)
+        await pruneMissing(
+            currentStableIDs: Set(allWorkItems.map(stableID)),
+            scannedShareNames: scannedShareNames,
+            context: context
+        )
     }
 
     // MARK: - Enumeration (background)
@@ -537,10 +549,11 @@ final class LibraryScanner {
 
     // MARK: - Pruning
 
-    private func pruneMissing(currentStableIDs: Set<String>, context: ModelContext) async {
+    private func pruneMissing(currentStableIDs: Set<String>, scannedShareNames: Set<String>, context: ModelContext) async {
         let descriptor = FetchDescriptor<Song>()
         guard let songs = try? context.fetch(descriptor) else { return }
-        for song in songs where !currentStableIDs.contains(song.stableID) {
+        for song in songs
+        where scannedShareNames.contains(song.shareName) && !currentStableIDs.contains(song.stableID) {
             let doomedID = song.stableID
             let entryDescriptor = FetchDescriptor<PlaylistEntry>(
                 predicate: #Predicate<PlaylistEntry> { $0.song?.stableID == doomedID }

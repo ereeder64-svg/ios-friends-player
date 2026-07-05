@@ -10,6 +10,9 @@ import Observation
 import SwiftData
 import UIKit
 import WidgetKit
+import OSLog
+
+private let widgetLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "PlaybackEngine")
 
 @MainActor
 @Observable
@@ -44,6 +47,7 @@ final class PlaybackEngine {
     }
 
     weak var coordinator: ShareAccessCoordinator?
+    var modelContext: ModelContext?
 
     // MARK: - Private
 
@@ -108,6 +112,7 @@ final class PlaybackEngine {
     private var lastDisplayedSong: Song?
 
     private func publishWidgetSnapshot() {
+        widgetLog.debug("publishWidgetSnapshot() entered, currentSong=\(self.currentSong?.title ?? "nil", privacy: .public)")
         if let song = currentSong {
             lastDisplayedSong = song
         }
@@ -126,13 +131,102 @@ final class PlaybackEngine {
         if let artPath = displaySong?.album?.artworkCachePath,
            let sharedURL = AppGroupConstants.sharedArtworkURL(),
            FileManager.default.fileExists(atPath: artPath) {
-            try? FileManager.default.removeItem(at: sharedURL)
-            try? FileManager.default.copyItem(at: URL(fileURLWithPath: artPath), to: sharedURL)
+            // WidgetKit rejects ("archival failed") images whose pixel area
+            // exceeds a small fixed budget (roughly 1024x1024). Full-resolution
+            // album art blows past that, silently breaking widget rendering.
+            // Downscale before handing it to the widget's shared container.
+            if let resizedData = Self.resizedArtworkData(atPath: artPath, maxDimension: 300) {
+                try? resizedData.write(to: sharedURL, options: .atomic)
+                widgetLog.debug("publishWidgetSnapshot(): wrote downscaled artwork (\(resizedData.count) bytes) to \(sharedURL.path, privacy: .public)")
+            } else {
+                widgetLog.error("publishWidgetSnapshot(): failed to downscale artwork at \(artPath, privacy: .public)")
+                try? FileManager.default.removeItem(at: sharedURL)
+            }
         } else if displaySong == nil, let sharedURL = AppGroupConstants.sharedArtworkURL() {
             try? FileManager.default.removeItem(at: sharedURL)
         }
 
+        recomputeAndPublishRecentAlbums()
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Picks the last N distinct albums played (by each album's most recent
+    /// song `lastPlayedAt`), most-recent-first. If fewer than N albums have
+    /// ever been played (new install, etc.), fills the remaining slots with
+    /// random albums from the library so the medium widget's recent-albums
+    /// row is never left sparse.
+    private func recomputeAndPublishRecentAlbums() {
+        guard let modelContext else {
+            widgetLog.error("recomputeAndPublishRecentAlbums(): modelContext is nil — skipping.")
+            return
+        }
+        guard let allAlbums = try? modelContext.fetch(FetchDescriptor<Album>()), !allAlbums.isEmpty else {
+            RecentAlbumsSnapshot.empty.save()
+            clearRecentAlbumArtwork(from: 0)
+            return
+        }
+
+        let slotCount = AppGroupConstants.recentAlbumSlotCount
+
+        let played = allAlbums
+            .compactMap { album -> (Album, Date)? in
+                guard let last = album.songs.compactMap(\.lastPlayedAt).max() else { return nil }
+                return (album, last)
+            }
+            .sorted { $0.1 > $1.1 }
+            .map(\.0)
+
+        var selected: [Album] = Array(played.prefix(slotCount))
+        if selected.count < slotCount {
+            var usedIDs = Set(selected.map(\.stableID))
+            let candidates = allAlbums.filter { !usedIDs.contains($0.stableID) }.shuffled()
+            for album in candidates {
+                guard selected.count < slotCount else { break }
+                selected.append(album)
+                usedIDs.insert(album.stableID)
+            }
+        }
+
+        let entries = selected.map { album in
+            RecentAlbumEntry(id: album.stableID, title: album.title, personaName: album.persona?.name ?? "")
+        }
+        for (i, e) in entries.enumerated() {
+            widgetLog.debug("recomputeAndPublishRecentAlbums(): slot \(i) -> id='\(e.id, privacy: .public)' title='\(e.title, privacy: .public)'")
+        }
+        RecentAlbumsSnapshot(albums: entries).save()
+
+        for (index, album) in selected.enumerated() {
+            guard let sharedURL = AppGroupConstants.sharedRecentAlbumArtworkURL(slot: index) else { continue }
+            if let path = album.artworkCachePath,
+               FileManager.default.fileExists(atPath: path),
+               let resized = Self.resizedArtworkData(atPath: path, maxDimension: 160) {
+                try? resized.write(to: sharedURL, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: sharedURL)
+            }
+        }
+        clearRecentAlbumArtwork(from: selected.count)
+    }
+
+    private func clearRecentAlbumArtwork(from slot: Int) {
+        for index in slot..<AppGroupConstants.recentAlbumSlotCount {
+            if let url = AppGroupConstants.sharedRecentAlbumArtworkURL(slot: index) {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+    }
+
+    private static func resizedArtworkData(atPath path: String, maxDimension: CGFloat) -> Data? {
+        guard let image = UIImage(contentsOfFile: path), image.size.width > 0, image.size.height > 0 else {
+            return nil
+        }
+        let scale = min(1, maxDimension / max(image.size.width, image.size.height))
+        let targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        return resized.pngData()
     }
 
     // MARK: - Public API
@@ -190,7 +284,11 @@ final class PlaybackEngine {
     }
 
     func togglePlayPause() {
-        guard currentSong != nil else { return }
+        widgetLog.debug("togglePlayPause() called, currentSong=\(self.currentSong?.title ?? "nil", privacy: .public), isPlaying=\(self.isPlaying)")
+        guard currentSong != nil else {
+            widgetLog.error("togglePlayPause() returning early — currentSong is nil.")
+            return
+        }
         if isPlaying {
             player.pause()
             isPlaying = false
@@ -204,6 +302,7 @@ final class PlaybackEngine {
     }
 
     func stop() {
+        widgetLog.debug("stop() called — clearing currentSong and publishing empty snapshot")
         player.pause()
         player.removeAllItems()
         currentSong = nil
@@ -211,6 +310,7 @@ final class PlaybackEngine {
         currentTime = 0
         duration = 0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        publishWidgetSnapshot()
     }
 
     func seek(to seconds: Double) {
@@ -221,7 +321,11 @@ final class PlaybackEngine {
     }
 
     func playNext() async {
-        guard !playbackQueue.isEmpty else { return }
+        widgetLog.debug("playNext() called, queueCount=\(self.playbackQueue.count), currentIndex=\(self.currentIndex)")
+        guard !playbackQueue.isEmpty else {
+            widgetLog.error("playNext() returning early — playbackQueue is empty.")
+            return
+        }
         let next = currentIndex + 1
         if next < playbackQueue.count {
             currentIndex = next
@@ -276,8 +380,10 @@ final class PlaybackEngine {
     }
 
     private func load(song: Song) async {
+        widgetLog.debug("load(song:) called for \(song.title, privacy: .public), coordinator is \(self.coordinator == nil ? "nil" : "set", privacy: .public)")
         guard let coordinator,
               let shareURL = coordinator.url(for: song.shareName) else {
+            widgetLog.error("load(song:) returning early — share not available for \(song.title, privacy: .public).")
             lastError = "Share not available for \"\(song.title)\""
             return
         }

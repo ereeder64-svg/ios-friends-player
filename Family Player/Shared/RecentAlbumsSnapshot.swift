@@ -1,35 +1,29 @@
 //
-//  NowPlayingSnapshot.swift
+//  RecentAlbumsSnapshot.swift
 //  Family Player + FamilyPlayerWidget (shared)
 //
 
 import Foundation
 import OSLog
 
-private let widgetLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "NowPlayingSnapshot")
+private let widgetLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "RecentAlbumsSnapshot")
 
-struct NowPlayingSnapshot: Codable, Sendable, Equatable {
-    var hasSong: Bool
-    var songTitle: String
+struct RecentAlbumEntry: Codable, Sendable, Equatable, Identifiable {
+    var id: String        // Album.stableID
+    var title: String
     var personaName: String
-    var albumTitle: String
-    var isPlaying: Bool
-    var updatedAt: Date
+}
 
-    static let empty = NowPlayingSnapshot(
-        hasSong: false,
-        songTitle: "",
-        personaName: "",
-        albumTitle: "",
-        isPlaying: false,
-        updatedAt: .distantPast
-    )
+struct RecentAlbumsSnapshot: Codable, Sendable, Equatable {
+    var albums: [RecentAlbumEntry]
+
+    static let empty = RecentAlbumsSnapshot(albums: [])
 
     private static var fileURL: URL? {
-        AppGroupConstants.containerURL()?.appendingPathComponent("nowPlayingSnapshot.json")
+        AppGroupConstants.containerURL()?.appendingPathComponent("recentAlbums.json")
     }
 
-    static func load() -> NowPlayingSnapshot {
+    static func load() -> RecentAlbumsSnapshot {
         guard let url = fileURL else {
             widgetLog.error("load(): AppGroupConstants.containerURL() returned nil — app group entitlement is not resolving.")
             return .empty
@@ -37,7 +31,7 @@ struct NowPlayingSnapshot: Codable, Sendable, Equatable {
         do {
             let data = try Data(contentsOf: url)
             do {
-                return try JSONDecoder().decode(NowPlayingSnapshot.self, from: data)
+                return try JSONDecoder().decode(RecentAlbumsSnapshot.self, from: data)
             } catch {
                 widgetLog.error("load(): decode failed at \(url.path, privacy: .public): \(String(describing: error), privacy: .public)")
                 return .empty
@@ -56,7 +50,7 @@ struct NowPlayingSnapshot: Codable, Sendable, Equatable {
         do {
             let data = try JSONEncoder().encode(self)
             try data.write(to: url, options: .atomic)
-            widgetLog.debug("save(): wrote snapshot (hasSong=\(self.hasSong), title=\(self.songTitle, privacy: .public), isPlaying=\(self.isPlaying)) to \(url.path, privacy: .public)")
+            widgetLog.debug("save(): wrote \(self.albums.count) recent album(s) to \(url.path, privacy: .public)")
         } catch {
             widgetLog.error("save(): write failed at \(url.path, privacy: .public): \(String(describing: error), privacy: .public)")
         }
