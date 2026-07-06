@@ -31,6 +31,17 @@ final class PlaybackEngine {
     private(set) var playbackQueue: [Song] = []
     private(set) var currentIndex: Int = 0
 
+    // Lives here (rather than as MainTabView's own local @State) so that
+    // RootView can dismiss the full-player sheet before presenting a
+    // widget-tapped album. MainTabView's NowPlayingSheet and RootView's
+    // deep-linked AlbumDetailView sheet are two independent .sheet
+    // modifiers on the same view hierarchy; if the now-playing sheet is
+    // already presented when the app is foregrounded via a widget album
+    // tap, RootView's own sheet presentation attempt gets silently blocked
+    // (iOS won't stack a second modal on a context that already has one
+    // presented), so the user just keeps seeing whatever was already up.
+    var isShowingNowPlayingSheet: Bool = false
+
     var shuffleEnabled: Bool = false {
         didSet {
             UserDefaults.standard.set(shuffleEnabled, forKey: Self.shuffleKey)
@@ -120,7 +131,7 @@ final class PlaybackEngine {
 
         let snap = NowPlayingSnapshot(
             hasSong: displaySong != nil,
-            songTitle: displaySong?.title ?? "",
+            songTitle: displaySong?.displayTitle ?? "",
             personaName: displaySong?.album?.persona?.name ?? "",
             albumTitle: displaySong?.album?.title ?? "",
             isPlaying: isPlaying && currentSong != nil,
@@ -384,7 +395,7 @@ final class PlaybackEngine {
         guard let coordinator,
               let shareURL = coordinator.url(for: song.shareName) else {
             widgetLog.error("load(song:) returning early — share not available for \(song.title, privacy: .public).")
-            lastError = "Share not available for \"\(song.title)\""
+            lastError = "Share not available for \"\(song.displayTitle)\""
             return
         }
         ensureSecurityScope(for: song.shareName, shareURL: shareURL)
@@ -412,7 +423,7 @@ final class PlaybackEngine {
             let available = await ensureLocallyAvailable(url: songURL)
             if !available {
                 if lastError == nil {
-                    lastError = "Couldn't download \"\(song.title)\" from iCloud. Connect to Wi-Fi, or download the song first for offline cellular playback."
+                    lastError = "Couldn't download \"\(song.displayTitle)\" from iCloud. Connect to Wi-Fi, or download the song first for offline cellular playback."
                 }
                 isLoading = false
                 currentSong = nil
@@ -637,7 +648,7 @@ final class PlaybackEngine {
         }
 
         var info: [String: Any] = [:]
-        info[MPMediaItemPropertyTitle] = song.title
+        info[MPMediaItemPropertyTitle] = song.displayTitle
         info[MPMediaItemPropertyArtist] = song.album?.persona?.name ?? "Eric Reeder"
         info[MPMediaItemPropertyAlbumTitle] = song.album?.title ?? ""
         if duration > 0 { info[MPMediaItemPropertyPlaybackDuration] = duration }

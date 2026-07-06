@@ -61,12 +61,12 @@ struct NowPlayingSheet: View {
                 } else {
                     AlbumArtworkView(
                         cachePath: song.album?.artworkCachePath,
-                        title: song.album?.title ?? song.title,
+                        title: song.album?.title ?? song.displayTitle,
                         size: 280,
                         cornerRadius: 12
                     )
                     VStack(spacing: 4) {
-                        Text(song.title).font(.title3.bold())
+                        Text(song.displayTitle).font(.title3.bold())
                         Text(song.album?.persona?.name ?? "").foregroundStyle(.secondary)
                         if let albumTitle = song.album?.title {
                             Text(albumTitle).font(.caption).foregroundStyle(.secondary)

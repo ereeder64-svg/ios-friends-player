@@ -7,7 +7,6 @@ import SwiftUI
 
 struct MainTabView: View {
     @Environment(PlaybackEngine.self) private var engine
-    @State private var showNowPlaying = false
 
     var body: some View {
         TabView {
@@ -29,9 +28,9 @@ struct MainTabView: View {
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .tabViewBottomAccessory(isEnabled: engine.currentSong != nil) {
-            MiniPlayerBar(onTap: { showNowPlaying = true })
+            MiniPlayerBar(onTap: { engine.isShowingNowPlayingSheet = true })
         }
-        .sheet(isPresented: $showNowPlaying) {
+        .sheet(isPresented: Bindable(engine).isShowingNowPlayingSheet) {
             NowPlayingSheet()
         }
         .alert(

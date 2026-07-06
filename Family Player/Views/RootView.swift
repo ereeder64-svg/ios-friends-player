@@ -43,7 +43,10 @@ struct RootView: View {
                         NavigationStack {
                             AlbumDetailView(album: album)
                         }
+                        .environment(coordinator)
+                        .environment(scanner)
                         .environment(engine)
+                        .environment(downloads)
                     }
             } else {
                 SetupView(coordinator: coordinator) {
@@ -80,7 +83,19 @@ struct RootView: View {
               !id.isEmpty else { return }
         defaults.removeObject(forKey: AppGroupConstants.Keys.pendingAlbumDeepLinkID)
         deepLinkLog.debug("checkPendingAlbumDeepLink: found pending id='\(id, privacy: .public)'.")
-        presentAlbum(withID: id)
+
+        // NOTE: the crash this delay was originally added for turned out to
+        // be a missing @Environment(DownloadManager.self) in this sheet's
+        // content (fixed at the .sheet(item:) call site below) — confirmed
+        // via a symbolicated crash log (EXC_BREAKPOINT/SIGTRAP inside
+        // EnvironmentValues.subscript.getter while building AlbumDetailView's
+        // toolbar). It was not a watchdog/responsiveness kill. This small
+        // delay is left in place only as a harmless buffer for the
+        // foreground transition to settle before presenting.
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            presentAlbum(withID: id)
+        }
     }
 
     // Widget recent-album thumbnails link back via
@@ -120,7 +135,28 @@ struct RootView: View {
         } else {
             deepLinkLog.error("presentAlbum: no Album matched shareName='\(shareName, privacy: .public)' relativePath='\(relativePath, privacy: .public)'.")
         }
-        deepLinkAlbum = found
+
+        // Two separate .sheet modifiers can be presented on this hierarchy:
+        // RootView's own $deepLinkAlbum, and MainTabView's now-playing sheet
+        // (driven by engine.isShowingNowPlayingSheet). If either is already
+        // up when a widget album tap comes in, presenting the new album sheet
+        // either flashes the previously-presented content first (item ->
+        // different item while already presented) or gets silently blocked
+        // entirely (a second sheet can't stack on a context that already has
+        // one presented — this is why leaving the app on the full-player
+        // view made every album tap just keep showing the playing song).
+        // Dismissing everything first and presenting fresh avoids both.
+        let hadOpenPresentation = deepLinkAlbum != nil || engine.isShowingNowPlayingSheet
+        if hadOpenPresentation {
+            deepLinkAlbum = nil
+            engine.isShowingNowPlayingSheet = false
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                deepLinkAlbum = found
+            }
+        } else {
+            deepLinkAlbum = found
+        }
     }
 
     // PlaylistEntry has no inverse relationship on Song, so previous sessions'

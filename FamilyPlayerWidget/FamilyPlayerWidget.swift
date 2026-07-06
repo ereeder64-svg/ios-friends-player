@@ -91,11 +91,13 @@ struct FamilyPlayerWidgetEntryView: View {
     // MARK: - Small (2x2)
 
     // Title: up to 2 lines, shrinks between these bounds before truncating.
+    // Floors raised now that displayed titles no longer carry the "NN "
+    // track-number prefix — there's more room before text needs to shrink.
     private static let titleMaxSize: CGFloat = 16
-    private static let titleMinSize: CGFloat = 12
+    private static let titleMinSize: CGFloat = 13.5
     // Artist: always exactly 1 line, shrinks between these bounds.
     private static let artistMaxSize: CGFloat = 10
-    private static let artistMinSize: CGFloat = 9
+    private static let artistMinSize: CGFloat = 9.5
 
     private var smallLayout: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -146,6 +148,13 @@ struct FamilyPlayerWidgetEntryView: View {
 
     // MARK: - Medium (4x2)
 
+    // Same rationale as the small layout: floors raised now that the
+    // trailing track-number prefix is gone from displayed titles.
+    private static let mediumTitleMaxSize: CGFloat = 14
+    private static let mediumTitleMinSize: CGFloat = 12.5
+    private static let mediumArtistMaxSize: CGFloat = 11
+    private static let mediumArtistMinSize: CGFloat = 10
+
     private var mediumLayout: some View {
         VStack(alignment: .leading, spacing: 10) {
             // Now-playing bar: artwork, title/artist, single play/pause
@@ -156,15 +165,15 @@ struct FamilyPlayerWidgetEntryView: View {
                     .frame(width: 44, height: 44)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(entry.snapshot.songTitle)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: Self.mediumTitleMaxSize, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .minimumScaleFactor(Self.mediumTitleMinSize / Self.mediumTitleMaxSize)
                     Text(entry.snapshot.personaName)
-                        .font(.system(size: 11))
+                        .font(.system(size: Self.mediumArtistMaxSize))
                         .foregroundStyle(.white.opacity(0.7))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .minimumScaleFactor(Self.mediumArtistMinSize / Self.mediumArtistMaxSize)
                 }
                 Spacer(minLength: 4)
                 Button(intent: PlayPauseIntent()) {
@@ -326,7 +335,7 @@ struct FamilyPlayerWidget: Widget {
         date: .now,
         snapshot: NowPlayingSnapshot(
             hasSong: true,
-            songTitle: "01 Battle of the Bell",
+            songTitle: "Battle of the Bell",
             personaName: "Eric Reeder",
             albumTitle: "Rise Up",
             isPlaying: true,
@@ -345,7 +354,7 @@ struct FamilyPlayerWidget: Widget {
         date: .now,
         snapshot: NowPlayingSnapshot(
             hasSong: true,
-            songTitle: "01 Battle of the Bell",
+            songTitle: "Battle of the Bell",
             personaName: "Eric Reeder",
             albumTitle: "Rise Up",
             isPlaying: true,

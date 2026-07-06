@@ -27,12 +27,12 @@ struct MiniPlayerBar: View {
             HStack(spacing: 12) {
                 AlbumArtworkView(
                     cachePath: song.album?.artworkCachePath,
-                    title: song.album?.title ?? song.title,
+                    title: song.album?.title ?? song.displayTitle,
                     size: 36,
                     cornerRadius: 4
                 )
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(song.title)
+                    Text(song.displayTitle)
                         .font(.subheadline.weight(.medium))
                         .lineLimit(1)
                     Text(song.album?.persona?.name ?? "")
@@ -62,11 +62,11 @@ struct MiniPlayerBar: View {
             HStack(spacing: 10) {
                 AlbumArtworkView(
                     cachePath: song.album?.artworkCachePath,
-                    title: song.album?.title ?? song.title,
+                    title: song.album?.title ?? song.displayTitle,
                     size: 28,
                     cornerRadius: 3
                 )
-                Text(song.title)
+                Text(song.displayTitle)
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                 Spacer(minLength: 8)

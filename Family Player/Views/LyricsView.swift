@@ -156,7 +156,7 @@ struct LyricsSheet: View {
     var body: some View {
         NavigationStack {
             LyricsView(song: song)
-                .navigationTitle(song.title)
+                .navigationTitle(song.displayTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {

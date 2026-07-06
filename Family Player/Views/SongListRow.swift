@@ -49,12 +49,12 @@ struct SongListRow: View {
                         .frame(width: 6)
                     AlbumArtworkView(
                         cachePath: song.album?.artworkCachePath,
-                        title: song.album?.title ?? song.title,
+                        title: song.album?.title ?? song.displayTitle,
                         size: 44,
                         cornerRadius: 4
                     )
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(song.title)
+                        Text(song.displayTitle)
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(titleColor)
                             .lineLimit(titleLineLimit)

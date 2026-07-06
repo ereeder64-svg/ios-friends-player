@@ -26,12 +26,12 @@ struct CreatePlaylistSheet: View {
                         HStack {
                             AlbumArtworkView(
                                 cachePath: song.album?.artworkCachePath,
-                                title: song.album?.title ?? song.title,
+                                title: song.album?.title ?? song.displayTitle,
                                 size: 36,
                                 cornerRadius: 4
                             )
                             VStack(alignment: .leading) {
-                                Text(song.title).font(.subheadline)
+                                Text(song.displayTitle).font(.subheadline)
                                 Text(song.album?.persona?.name ?? "")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)

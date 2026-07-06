@@ -58,4 +58,20 @@ final class Song {
         self.downloadedAt = nil
         self.downloadSizeBytes = 0
     }
+
+    /// `title` with a manually-embedded two-digit track-number prefix
+    /// stripped for display (e.g. "03 Bohemian Rhapsody" -> "Bohemian
+    /// Rhapsody"). Only strips when the first two characters are both
+    /// digits; otherwise the full title is returned untouched — a
+    /// catch-all for songs that don't follow that naming convention.
+    /// Sorting, search, and stableID all continue to use the raw `title`,
+    /// which is unaffected by this.
+    var displayTitle: String {
+        let chars = Array(title)
+        guard chars.count >= 2, chars[0].isNumber, chars[1].isNumber else {
+            return title
+        }
+        let trimmed = String(chars.dropFirst(3))
+        return trimmed.isEmpty ? title : trimmed
+    }
 }
