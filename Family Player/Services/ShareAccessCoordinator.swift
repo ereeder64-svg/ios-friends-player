@@ -23,14 +23,26 @@ final class ShareAccessCoordinator {
     private(set) var resolvedURLs: [String: URL] = [:]
     private(set) var staleShares: Set<String> = []
 
-    func hasAnyShares(context: ModelContext) -> Bool {
+    // ShareBookmark lives in its own local-only ModelContainer (see
+    // Family_PlayerApp.localOnlyModelContainer) -- security-scoped bookmark
+    // data only means something on the device/sandbox that created it, so
+    // it must never be in the CloudKit-synced container. This coordinator
+    // owns its own ModelContext against that separate container rather than
+    // taking the app's shared (synced) context from callers.
+    private let context: ModelContext
+
+    init(localContainer: ModelContainer = Family_PlayerApp.localOnlyModelContainer) {
+        self.context = ModelContext(localContainer)
+    }
+
+    func hasAnyShares() -> Bool {
         let descriptor = FetchDescriptor<ShareBookmark>()
         let count = (try? context.fetchCount(descriptor)) ?? 0
         return count > 0
     }
 
     @discardableResult
-    func resolveAll(context: ModelContext) -> [String: URL] {
+    func resolveAll() -> [String: URL] {
         resolvedURLs.removeAll()
         staleShares.removeAll()
 
@@ -57,7 +69,7 @@ final class ShareAccessCoordinator {
         return resolvedURLs
     }
 
-    func saveBookmark(for shareName: String, pickedURL: URL, context: ModelContext) throws {
+    func saveBookmark(for shareName: String, pickedURL: URL) throws {
         let didStart = pickedURL.startAccessingSecurityScopedResource()
         defer { if didStart { pickedURL.stopAccessingSecurityScopedResource() } }
 
@@ -83,7 +95,7 @@ final class ShareAccessCoordinator {
         staleShares.remove(shareName)
     }
 
-    func removeBookmark(for shareName: String, context: ModelContext) throws {
+    func removeBookmark(for shareName: String) throws {
         let descriptor = FetchDescriptor<ShareBookmark>(
             predicate: #Predicate { $0.shareName == shareName }
         )
@@ -101,5 +113,16 @@ final class ShareAccessCoordinator {
 
     func configuredShareNames() -> [String] {
         Array(resolvedURLs.keys).sorted()
+    }
+
+    /// Song/Album/Persona sync globally via CloudKit, but each device only
+    /// has actual file access to the shares IT has connected (ShareBookmark
+    /// is local-only, per device). Any Song/Album whose shareName isn't in
+    /// this set exists in the synced library only because some other
+    /// device connected that share -- this device can't reach the file, so
+    /// it should be filtered out of every user-facing list rather than
+    /// shown with placeholder artwork / failing to play.
+    var connectedShareNames: Set<String> {
+        Set(resolvedURLs.keys)
     }
 }

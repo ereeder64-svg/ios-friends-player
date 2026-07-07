@@ -98,7 +98,7 @@ struct SetupView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
             do {
-                try coordinator.saveBookmark(for: shareName, pickedURL: url, context: modelContext)
+                try coordinator.saveBookmark(for: shareName, pickedURL: url)
                 configured.insert(shareName)
             } catch {
                 errorMessage = error.localizedDescription

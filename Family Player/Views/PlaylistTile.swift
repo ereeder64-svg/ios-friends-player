@@ -8,13 +8,18 @@ import SwiftData
 
 struct PlaylistTile: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(ShareAccessCoordinator.self) private var coordinator
     let playlist: Playlist
 
     private var collageArts: [String] {
         // Fetch entries via the store, filtering out any orphaned song refs so we
         // never touch a faulted Song's properties.
         guard let allSongObjects = try? modelContext.fetch(FetchDescriptor<Song>()) else { return [] }
-        let validIDs = Set(allSongObjects.map { $0.persistentModelID })
+        let validIDs = Set(
+            allSongObjects
+                .filter { coordinator.connectedShareNames.contains($0.shareName) }
+                .map { $0.persistentModelID }
+        )
 
         let playlistID = playlist.persistentModelID
         let descriptor = FetchDescriptor<PlaylistEntry>(

@@ -7,23 +7,42 @@ import SwiftUI
 import SwiftData
 
 struct LibraryTabView: View {
+    var body: some View {
+        NavigationStack {
+            LibraryTabContent()
+        }
+    }
+}
+
+struct LibraryTabContent: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(LibraryScanner.self) private var scanner
     @Environment(ShareAccessCoordinator.self) private var coordinator
     @Environment(DownloadManager.self) private var downloads
 
-    @Query private var personas: [Persona]
-    @Query private var albums: [Album]
-    @Query private var songs: [Song]
+    @Query private var allPersonas: [Persona]
+    @Query private var allAlbums: [Album]
+    @Query private var allSongs: [Song]
+
+    private var albums: [Album] {
+        allAlbums.filter { coordinator.connectedShareNames.contains($0.shareName) }
+    }
+    private var songs: [Song] {
+        allSongs.filter { coordinator.connectedShareNames.contains($0.shareName) }
+    }
+    private var personas: [Persona] {
+        allPersonas.filter { persona in
+            (persona.albums ?? []).contains { coordinator.connectedShareNames.contains($0.shareName) }
+        }
+    }
 
     var body: some View {
-        NavigationStack {
-            List {
-                if scanner.progress.isScanning {
-                    Section {
-                        ScanProgressRow(progress: scanner.progress)
-                    }
+        List {
+            if scanner.progress.isScanning {
+                Section {
+                    ScanProgressRow(progress: scanner.progress)
                 }
+            }
 
                 Section("Browse") {
                     NavigationLink {
@@ -62,7 +81,7 @@ struct LibraryTabView: View {
 
                 Section("Downloads") {
                     BulkDownloadMenuItems(songs: songs, label: "All Songs")
-                    let downloaded = songs.filter { $0.downloadCachePath != nil }.count
+                    let downloaded = songs.filter { downloads.downloadedStableIDs.contains($0.stableID) }.count
                     Text("\(downloaded) of \(songs.count) songs downloaded")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -76,8 +95,7 @@ struct LibraryTabView: View {
                     }
                     .disabled(scanner.progress.isScanning)
                     Button(role: .destructive) {
-                        for album in albums { album.artworkCachePath = nil }
-                        try? modelContext.save()
+                        LibraryScanner.clearArtworkCache()
                         Task { await scanner.scan(coordinator: coordinator, context: modelContext) }
                     } label: {
                         Label("Reset Artwork Cache & Rescan", systemImage: "photo.badge.arrow.down")
@@ -94,7 +112,6 @@ struct LibraryTabView: View {
 
             }
             .navigationTitle("Library")
-        }
     }
 }
 

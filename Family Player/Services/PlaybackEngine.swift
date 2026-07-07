@@ -171,7 +171,14 @@ final class PlaybackEngine {
             widgetLog.error("recomputeAndPublishRecentAlbums(): modelContext is nil — skipping.")
             return
         }
-        guard let allAlbums = try? modelContext.fetch(FetchDescriptor<Album>()), !allAlbums.isEmpty else {
+        guard let fetchedAlbums = try? modelContext.fetch(FetchDescriptor<Album>()) else {
+            RecentAlbumsSnapshot.empty.save()
+            clearRecentAlbumArtwork(from: 0)
+            return
+        }
+        let connectedShareNames = coordinator?.connectedShareNames ?? []
+        let allAlbums = fetchedAlbums.filter { connectedShareNames.contains($0.shareName) }
+        guard !allAlbums.isEmpty else {
             RecentAlbumsSnapshot.empty.save()
             clearRecentAlbumArtwork(from: 0)
             return

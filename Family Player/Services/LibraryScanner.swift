@@ -114,6 +114,144 @@ final class LibraryScanner {
             scannedShareNames: scannedShareNames,
             context: context
         )
+        mergeDuplicateLibraryEntries(context: context)
+    }
+
+    // MARK: - Dedup (self-healing for legacy duplicate records)
+
+    // Earlier bugs (a device's first scan racing ahead of CloudKit's
+    // initial import, and a ModelContainer store collision that corrupted
+    // saves mid-write) both had windows where the same Persona/Album/Song
+    // could get inserted more than once before app-level dedup (fetch by
+    // natural key before insert) had a chance to see the earlier row. Those
+    // duplicates already made it into CloudKit as genuinely separate
+    // records, so a fresh local install just re-downloads all of them --
+    // no amount of fetch-before-insert logic at scan time can prevent that,
+    // since CloudKit itself has two distinct records for the same song.
+    // This merges any duplicates found by natural key back down to one,
+    // preserving favorite/play-history/playlist-membership state, and runs
+    // after every scan so it keeps self-healing as old duplicates continue
+    // trickling in from CloudKit.
+    private func mergeDuplicateLibraryEntries(context: ModelContext) {
+        mergeDuplicatePersonas(context: context)
+        mergeDuplicateAlbums(context: context)
+        mergeDuplicateSongs(context: context)
+        try? context.save()
+    }
+
+    // IMPORTANT: winner selection across all three merge functions below
+    // must be a deterministic total order -- given the SAME set of
+    // duplicate records (which is what both devices see once CloudKit has
+    // fully synced them), every device must compute the SAME winner.
+    // `Array.max(by:)` only compares pairwise and silently falls back to
+    // whatever order `context.fetch()` happened to return for ties, and
+    // that local fetch order is not guaranteed to match across devices.
+    // If device A picks copy X as the winner and device B (fetching the
+    // exact same two duplicate rows) picks copy Y, each device deletes the
+    // OTHER's winner on its next scan -- a tug-of-war that never
+    // converges, and any favorite/play-history/playlist state applied to
+    // "the losing" copy on one device can vanish when that device's
+    // dedup pass later decides its copy lost. Sorting by a synced,
+    // content-derived tiebreak (firstSeenAt / dateAddedToLibrary) instead
+    // of object identity fixes that: once the tiebreak value itself has
+    // synced, every device agrees on the winner.
+    private func mergeDuplicatePersonas(context: ModelContext) {
+        guard let personas = try? context.fetch(FetchDescriptor<Persona>()) else { return }
+        var groups: [String: [Persona]] = [:]
+        for persona in personas {
+            groups[persona.name.lowercased(), default: []].append(persona)
+        }
+        for group in groups.values where group.count > 1 {
+            let ranked = group.sorted { a, b in
+                let countA = a.albums?.count ?? 0
+                let countB = b.albums?.count ?? 0
+                if countA != countB { return countA > countB }
+                return a.firstSeenAt < b.firstSeenAt
+            }
+            guard let winner = ranked.first else { continue }
+            for loser in group where loser.persistentModelID != winner.persistentModelID {
+                for album in loser.albums ?? [] {
+                    album.persona = winner
+                }
+                context.delete(loser)
+            }
+        }
+    }
+
+    private func mergeDuplicateAlbums(context: ModelContext) {
+        guard let albums = try? context.fetch(FetchDescriptor<Album>()) else { return }
+        var groups: [String: [Album]] = [:]
+        for album in albums {
+            groups[album.stableID, default: []].append(album)
+        }
+        for group in groups.values where group.count > 1 {
+            let ranked = group.sorted { a, b in
+                let countA = a.songs?.count ?? 0
+                let countB = b.songs?.count ?? 0
+                if countA != countB { return countA > countB }
+                return a.firstSeenAt < b.firstSeenAt
+            }
+            guard let winner = ranked.first else { continue }
+            for loser in group where loser.persistentModelID != winner.persistentModelID {
+                for song in loser.songs ?? [] {
+                    song.album = winner
+                }
+                context.delete(loser)
+            }
+        }
+    }
+
+    private func mergeDuplicateSongs(context: ModelContext) {
+        guard let songs = try? context.fetch(FetchDescriptor<Song>()) else { return }
+        var groups: [String: [Song]] = [:]
+        for song in songs {
+            groups[song.stableID, default: []].append(song)
+        }
+        func score(_ song: Song) -> Int {
+            (song.hasBeenPlayed ? 4 : 0) + (song.isFavorite ? 2 : 0) + (song.metadataLoaded ? 1 : 0)
+        }
+        for group in groups.values where group.count > 1 {
+            let ranked = group.sorted { a, b in
+                let scoreA = score(a)
+                let scoreB = score(b)
+                if scoreA != scoreB { return scoreA > scoreB }
+                return a.dateAddedToLibrary < b.dateAddedToLibrary
+            }
+            guard let winner = ranked.first else { continue }
+            let winnerPlaylistIDs = Set((winner.playlistEntries ?? []).compactMap { $0.playlist?.persistentModelID })
+
+            for loser in group where loser.persistentModelID != winner.persistentModelID {
+                // Preserve favorite/play-history state before discarding the loser.
+                winner.isFavorite = winner.isFavorite || loser.isFavorite
+                winner.hasBeenPlayed = winner.hasBeenPlayed || loser.hasBeenPlayed
+                winner.playCount = max(winner.playCount, loser.playCount)
+                if let loserPlayedAt = loser.lastPlayedAt,
+                   (winner.lastPlayedAt ?? .distantPast) < loserPlayedAt {
+                    winner.lastPlayedAt = loserPlayedAt
+                }
+                if !winner.metadataLoaded && loser.metadataLoaded {
+                    winner.title = loser.title
+                    winner.trackNumber = loser.trackNumber
+                    winner.duration = loser.duration
+                    winner.hasLyrics = loser.hasLyrics
+                    winner.metadataLoaded = true
+                }
+
+                // Re-point playlist membership instead of losing it, but
+                // don't create a second entry in a playlist that already
+                // has the winner.
+                for entry in loser.playlistEntries ?? [] {
+                    if let playlistID = entry.playlist?.persistentModelID,
+                       winnerPlaylistIDs.contains(playlistID) {
+                        context.delete(entry)
+                    } else {
+                        entry.song = winner
+                    }
+                }
+
+                context.delete(loser)
+            }
+        }
     }
 
     // MARK: - Enumeration (background)
@@ -436,8 +574,9 @@ final class LibraryScanner {
             descriptor.fetchLimit = 1
             guard let album = try? context.fetch(descriptor).first else { continue }
 
-            if let cached = album.artworkCachePath,
-               FileManager.default.fileExists(atPath: cached) {
+            // artworkCachePath is computed from on-disk presence (see
+            // Album.swift), so this already means "we have a local copy".
+            if album.artworkCachePath != nil {
                 continue
             }
 
@@ -449,18 +588,14 @@ final class LibraryScanner {
             let destSidecar = cacheDir.appendingPathComponent("\(album.shareName)__\(safeRel).png")
 
             if await Self.coordinatedCopy(from: sidecar, to: destSidecar) {
-                album.artworkCachePath = destSidecar.path
                 continue
             }
 
             if let fallback = await findFallbackArtwork(in: folderURL) {
                 let destFallback = cacheDir.appendingPathComponent("\(album.shareName)__\(safeRel).\(fallback.pathExtension)")
-                if await Self.coordinatedCopy(from: fallback, to: destFallback) {
-                    album.artworkCachePath = destFallback.path
-                }
+                _ = await Self.coordinatedCopy(from: fallback, to: destFallback)
             }
         }
-        try? context.save()
     }
 
     nonisolated static func coordinatedCopy(from source: URL, to dest: URL) async -> Bool {
@@ -506,6 +641,16 @@ final class LibraryScanner {
         return docs.appendingPathComponent("ArtworkCache", isDirectory: true)
     }
 
+    /// Deletes every locally cached artwork file on this device. Since
+    /// artworkCachePath is now computed from on-disk presence (not a synced
+    /// property), "resetting" it just means removing the actual files --
+    /// the next scan will re-copy them fresh.
+    nonisolated static func clearArtworkCache() {
+        let dir = artworkCacheDirectory()
+        guard let files = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return }
+        for f in files { try? FileManager.default.removeItem(at: f) }
+    }
+
     // MARK: - Persona artwork
     //
     // Mac player convention: each share may contain an "Artists" folder with
@@ -518,7 +663,8 @@ final class LibraryScanner {
 
         let fm = FileManager.default
         for persona in personas {
-            if let existing = persona.artworkCachePath, fm.fileExists(atPath: existing) {
+            // artworkCachePath is computed from on-disk presence.
+            if persona.artworkCachePath != nil {
                 continue
             }
             let safeName = persona.name.replacingOccurrences(of: "/", with: "_")
@@ -539,12 +685,10 @@ final class LibraryScanner {
 
             for candidate in candidates {
                 if await Self.coordinatedCopy(from: candidate, to: dest) {
-                    persona.artworkCachePath = dest.path
                     break
                 }
             }
         }
-        try? context.save()
     }
 
     // MARK: - Pruning

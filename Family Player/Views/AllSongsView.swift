@@ -7,8 +7,15 @@ import SwiftUI
 import SwiftData
 
 struct AllSongsView: View {
-    @Query(sort: \Song.title) private var songs: [Song]
+    @Environment(ShareAccessCoordinator.self) private var coordinator
+    @Query(sort: \Song.title) private var allSongs: [Song]
     @State private var searchText = ""
+
+    // Only songs from shares this device has actually connected -- see
+    // ShareAccessCoordinator.connectedShareNames.
+    private var songs: [Song] {
+        allSongs.filter { coordinator.connectedShareNames.contains($0.shareName) }
+    }
 
     private var filteredSongs: [Song] {
         guard !searchText.isEmpty else { return songs }
@@ -104,14 +111,21 @@ struct SongsCountFooter: View {
 struct SongListSection: View {
     let songs: [Song]
 
+    // Matches PlayShuffleButtons/SongsCountFooter's own .padding(.horizontal, 20)
+    // in every screen that embeds this (Library/New/Favorites/Downloads/
+    // Songs/Search) -- these three used to disagree (16 here vs 20 there),
+    // which visibly shifted every song row a few points left of the play
+    // pill and count footer above/below it.
+    private let horizontalInset: CGFloat = 20
+
     var body: some View {
         LazyVStack(spacing: 0) {
             ForEach(Array(songs.enumerated()), id: \.element.stableID) { idx, song in
                 SongListRow(song: song, scope: songs)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, horizontalInset)
                     .padding(.vertical, 6)
                 if idx < songs.count - 1 {
-                    Divider().padding(.leading, 72)
+                    Divider().padding(.leading, horizontalInset + 56)
                 }
             }
         }

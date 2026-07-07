@@ -32,9 +32,33 @@ final class Song {
     var lastPlayedAt: Date?
     var playCount: Int = 0
 
-    var downloadCachePath: String?
-    var downloadedAt: Date?
-    var downloadSizeBytes: Int64 = 0
+    // NOTE: download state is intentionally NOT a stored/synced property.
+    // It used to be (downloadCachePath/downloadedAt/downloadSizeBytes as
+    // @Model vars), which meant CloudKit synced one device's local file
+    // path to every other device -- so a song downloaded on the iPad would
+    // show as "already downloaded" on the iPhone (wrong path, file doesn't
+    // exist there), and refreshing on one device could stomp the other's
+    // state. Download location is fully deterministic from shareName +
+    // relativePath (see DownloadManager.destinationURL), so instead we just
+    // check the local filesystem on demand -- naturally per-device, nothing
+    // to keep in sync.
+    var downloadCachePath: String? {
+        let path = DownloadManager.destinationURL(for: self).path
+        return FileManager.default.fileExists(atPath: path) ? path : nil
+    }
+
+    var downloadedAt: Date? {
+        guard let path = downloadCachePath,
+              let attrs = try? FileManager.default.attributesOfItem(atPath: path) else { return nil }
+        return (attrs[.creationDate] as? Date) ?? (attrs[.modificationDate] as? Date)
+    }
+
+    var downloadSizeBytes: Int64 {
+        guard let path = downloadCachePath,
+              let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+              let size = attrs[.size] as? Int64 else { return 0 }
+        return size
+    }
 
     // Inverse side of PlaylistEntry.song. Previously PlaylistEntry.song had
     // no @Relationship/inverse at all, which is why deleting a Song left
@@ -72,10 +96,6 @@ final class Song {
         self.hasBeenPlayed = false
         self.lastPlayedAt = nil
         self.playCount = 0
-
-        self.downloadCachePath = nil
-        self.downloadedAt = nil
-        self.downloadSizeBytes = 0
     }
 
     /// `title` with a manually-embedded two-digit track-number prefix

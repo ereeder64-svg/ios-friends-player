@@ -8,6 +8,10 @@ import SwiftUI
 struct PlayShuffleButtons: View {
     @Environment(PlaybackEngine.self) private var engine
     let songs: [Song]
+    /// When non-nil, an "Add" pill is shown to the right of Shuffle and the
+    /// Play/Shuffle buttons shrink slightly to make room for it. Used by
+    /// PlaylistDetailView to let the user pick songs from the whole library.
+    var onAdd: (() -> Void)? = nil
 
     private var currentInScope: Bool {
         guard let current = engine.currentSong else { return false }
@@ -18,8 +22,12 @@ struct PlayShuffleButtons: View {
         currentInScope && engine.isPlaying
     }
 
+    private var buttonFont: Font {
+        onAdd != nil ? .subheadline : .body
+    }
+
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: onAdd != nil ? 8 : 12) {
             Button {
                 if currentInScope {
                     engine.togglePlayPause()
@@ -31,12 +39,23 @@ struct PlayShuffleButtons: View {
                     showPause ? "Pause" : "Play",
                     systemImage: showPause ? "pause.fill" : "play.fill"
                 )
+                .font(buttonFont)
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .disabled(songs.isEmpty)
 
             shuffleButton
+
+            if let onAdd {
+                Button(action: onAdd) {
+                    Image(systemName: "plus")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 20, height: 20)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+            }
         }
     }
 
@@ -47,6 +66,7 @@ struct PlayShuffleButtons: View {
                 engine.shuffleEnabled = false
             } label: {
                 Label("Shuffle", systemImage: "shuffle")
+                    .font(buttonFont)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -59,6 +79,7 @@ struct PlayShuffleButtons: View {
                 }
             } label: {
                 Label("Shuffle", systemImage: "shuffle")
+                    .font(buttonFont)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)

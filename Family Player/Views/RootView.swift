@@ -5,9 +5,11 @@
 
 import SwiftUI
 import SwiftData
+import CoreData
 import OSLog
 
 private let deepLinkLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "DeepLink")
+nonisolated(unsafe) private let cloudKitSyncLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "CloudKitSync")
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
@@ -33,8 +35,11 @@ struct RootView: View {
                         engine.coordinator = coordinator
                         engine.modelContext = modelContext
                         downloads.coordinator = coordinator
+                        downloads.modelContext = modelContext
+                        downloads.refreshDownloadedStableIDs()
                         if !didKickOffInitialScan {
                             didKickOffInitialScan = true
+                            await waitForInitialCloudKitImportIfNeeded(context: modelContext)
                             await scanner.scan(coordinator: coordinator, context: modelContext)
                         }
                         checkPendingAlbumDeepLink()
@@ -57,7 +62,7 @@ struct RootView: View {
         .onAppear {
             guard !didResolve else { return }
             didResolve = true
-            _ = coordinator.resolveAll(context: modelContext)
+            _ = coordinator.resolveAll()
             purgeOrphanedPlaylistEntries()
             hasCompletedSetup = !coordinator.resolvedURLs.isEmpty
         }
@@ -73,6 +78,56 @@ struct RootView: View {
             // turned out not to be reliably firing from widget taps at all.
             if newPhase == .active {
                 checkPendingAlbumDeepLink()
+            }
+        }
+    }
+
+    // On a brand-new device/install, the local SwiftData store starts
+    // completely empty. If LibraryScanner's first scan runs before
+    // CloudKit's initial import of the existing library (from other
+    // devices) has landed, the scanner has no way to know those Song/Album/
+    // Persona records already exist -- it'll happily create brand new ones,
+    // since app-level dedup (LibraryScanner.fetchSong/fetchOrCreateAlbum)
+    // only checks THIS device's local store, not the CloudKit account as a
+    // whole. That produces duplicate library entries that never reconcile
+    // with the "real" synced ones. Only matters the very first time (an
+    // already-populated device has nothing to race against), and is capped
+    // with a timeout so a device with no network, or a genuinely first-ever
+    // library, doesn't hang waiting for an import that will never come.
+    private func waitForInitialCloudKitImportIfNeeded(context: ModelContext) async {
+        let alreadyHasSongs = ((try? context.fetchCount(FetchDescriptor<Song>())) ?? 0) > 0
+        guard !alreadyHasSongs else { return }
+
+        cloudKitSyncLog.debug("waitForInitialCloudKitImportIfNeeded: local Song store is empty, waiting briefly for CloudKit's initial import before first scan.")
+
+        let maxWait: UInt64 = 8_000_000_000 // 8s
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            var didResume = false
+            var observer: NSObjectProtocol?
+
+            func resume(reason: String) {
+                guard !didResume else { return }
+                didResume = true
+                if let observer { NotificationCenter.default.removeObserver(observer) }
+                cloudKitSyncLog.debug("waitForInitialCloudKitImportIfNeeded: proceeding (\(reason, privacy: .public)).")
+                continuation.resume()
+            }
+
+            observer = NotificationCenter.default.addObserver(
+                forName: NSPersistentCloudKitContainer.eventChangedNotification,
+                object: nil,
+                queue: .main
+            ) { note in
+                guard let event = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event,
+                      event.type == .import,
+                      event.endDate != nil
+                else { return }
+                resume(reason: event.succeeded ? "initial import completed" : "initial import finished with error: \(String(describing: event.error))")
+            }
+
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: maxWait)
+                resume(reason: "timed out waiting for CloudKit import")
             }
         }
     }

@@ -7,13 +7,17 @@ import SwiftUI
 import SwiftData
 
 struct PersonasListView: View {
-    @Query(sort: \Persona.name) private var personas: [Persona]
+    @Query(sort: \Persona.name) private var allPersonas: [Persona]
+    @Environment(ShareAccessCoordinator.self) private var coordinator
     @State private var searchText = ""
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 20),
-        GridItem(.flexible(), spacing: 20)
-    ]
+    private let columns = AdaptiveTileGrid.columns
+
+    private var personas: [Persona] {
+        allPersonas.filter { persona in
+            (persona.albums ?? []).contains { coordinator.connectedShareNames.contains($0.shareName) }
+        }
+    }
 
     private var filteredPersonas: [Persona] {
         guard !searchText.isEmpty else { return personas }
@@ -24,6 +28,7 @@ struct PersonasListView: View {
     private var allSongs: [Song] {
         filteredPersonas.flatMap { persona in
             (persona.albums ?? [])
+                .filter { coordinator.connectedShareNames.contains($0.shareName) }
                 .sorted { $0.title < $1.title }
                 .flatMap { album in
                     (album.songs ?? []).sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
@@ -85,9 +90,12 @@ struct PersonasListView: View {
 
 struct PersonaDetailView: View {
     let persona: Persona
+    @Environment(ShareAccessCoordinator.self) private var coordinator
 
     private var sortedAlbums: [Album] {
-        (persona.albums ?? []).sorted { $0.title < $1.title }
+        (persona.albums ?? [])
+            .filter { coordinator.connectedShareNames.contains($0.shareName) }
+            .sorted { $0.title < $1.title }
     }
 
     private var allSongs: [Song] {
@@ -96,10 +104,7 @@ struct PersonaDetailView: View {
         }
     }
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 20),
-        GridItem(.flexible(), spacing: 20)
-    ]
+    private let columns = AdaptiveTileGrid.columns
 
     var body: some View {
         ScrollView {

@@ -12,7 +12,13 @@ struct ShareManagementView: View {
     @Environment(ShareAccessCoordinator.self) private var coordinator
     @Environment(LibraryScanner.self) private var scanner
 
-    @Query(sort: \ShareBookmark.shareName) private var bookmarks: [ShareBookmark]
+    // ShareBookmark lives in its own local-only ModelContainer (not the
+    // app's shared/synced one), so it can't be read via @Query here --
+    // the coordinator is the source of truth for which shares are
+    // connected on this device.
+    private var bookmarkedNames: [String] {
+        coordinator.configuredShareNames()
+    }
 
     @State private var selectingShare: String?
     @State private var isPickerPresented = false
@@ -20,7 +26,7 @@ struct ShareManagementView: View {
     @State private var confirmRemoval: String?
 
     private var configuredNames: Set<String> {
-        Set(bookmarks.map { $0.shareName })
+        Set(bookmarkedNames)
     }
 
     private var availableToAdd: [String] {
@@ -45,10 +51,10 @@ struct ShareManagementView: View {
                 }
             }
 
-            if !bookmarks.isEmpty {
+            if !bookmarkedNames.isEmpty {
                 Section("Connected Shares") {
-                    ForEach(bookmarks) { bookmark in
-                        bookmarkRow(bookmark)
+                    ForEach(bookmarkedNames, id: \.self) { name in
+                        bookmarkRow(name)
                     }
                 }
             }
@@ -117,18 +123,18 @@ struct ShareManagementView: View {
     }
 
     @ViewBuilder
-    private func bookmarkRow(_ bookmark: ShareBookmark) -> some View {
-        let url = coordinator.url(for: bookmark.shareName)
+    private func bookmarkRow(_ shareName: String) -> some View {
+        let url = coordinator.url(for: shareName)
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(bookmark.shareName)
+                Text(shareName)
                     .font(.body.weight(.medium))
                 if let url {
                     Text(url.lastPathComponent)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                    if url.lastPathComponent != bookmark.shareName {
+                    if url.lastPathComponent != shareName {
                         Label("Folder name doesn't match", systemImage: "exclamationmark.triangle.fill")
                             .font(.caption2)
                             .foregroundStyle(.orange)
@@ -147,12 +153,12 @@ struct ShareManagementView: View {
             Spacer()
             Menu {
                 Button {
-                    beginPicking(bookmark.shareName)
+                    beginPicking(shareName)
                 } label: {
                     Label("Change Folder", systemImage: "folder")
                 }
                 Button(role: .destructive) {
-                    confirmRemoval = bookmark.shareName
+                    confirmRemoval = shareName
                 } label: {
                     Label("Remove Share", systemImage: "trash")
                 }
@@ -177,7 +183,7 @@ struct ShareManagementView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
             do {
-                try coordinator.saveBookmark(for: shareName, pickedURL: url, context: modelContext)
+                try coordinator.saveBookmark(for: shareName, pickedURL: url)
                 // Trigger a rescan so the new content is indexed and orphans are pruned.
                 Task {
                     await scanner.scan(coordinator: coordinator, context: modelContext)
@@ -192,7 +198,7 @@ struct ShareManagementView: View {
 
     private func removeShare(_ shareName: String) {
         do {
-            try coordinator.removeBookmark(for: shareName, context: modelContext)
+            try coordinator.removeBookmark(for: shareName)
         } catch {
             errorMessage = error.localizedDescription
             return

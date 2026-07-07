@@ -9,17 +9,23 @@ import SwiftData
 struct PlaylistDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(PlaybackEngine.self) private var engine
+    @Environment(ShareAccessCoordinator.self) private var coordinator
     let playlist: Playlist
 
     @State private var showRenameSheet = false
     @State private var showDeleteConfirm = false
+    @State private var showAddSongsSheet = false
 
     private var validEntries: [PlaylistEntry] {
         // Fresh store-level fetch that filters out orphaned entries whose song is
         // gone; the extra validIDs check is a safety net if the predicate doesn't
         // catch dangling in-memory faults.
         guard let allSongObjects = try? modelContext.fetch(FetchDescriptor<Song>()) else { return [] }
-        let validIDs = Set(allSongObjects.map { $0.persistentModelID })
+        let validIDs = Set(
+            allSongObjects
+                .filter { coordinator.connectedShareNames.contains($0.shareName) }
+                .map { $0.persistentModelID }
+        )
 
         let playlistID = playlist.persistentModelID
         let descriptor = FetchDescriptor<PlaylistEntry>(
@@ -78,7 +84,7 @@ struct PlaylistDetailView: View {
                 }
                 .padding(.horizontal)
 
-                PlayShuffleButtons(songs: sortedSongs)
+                PlayShuffleButtons(songs: sortedSongs, onAdd: { showAddSongsSheet = true })
                     .padding(.horizontal)
 
                 sortPicker
@@ -127,6 +133,9 @@ struct PlaylistDetailView: View {
         }
         .sheet(isPresented: $showRenameSheet) {
             RenamePlaylistSheet(playlist: playlist)
+        }
+        .sheet(isPresented: $showAddSongsSheet) {
+            AddSongsToPlaylistSheet(playlist: playlist)
         }
         .alert("Delete Playlist?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {

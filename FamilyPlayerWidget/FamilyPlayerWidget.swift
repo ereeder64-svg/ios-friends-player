@@ -54,6 +54,7 @@ struct Provider: TimelineProvider {
 struct FamilyPlayerWidgetEntryView: View {
     var entry: NowPlayingEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Group {
@@ -75,8 +76,14 @@ struct FamilyPlayerWidgetEntryView: View {
         }
     }
 
+    // Dark color scheme -> the transparent WHITE icon (reads clearly
+    // against a dark system appearance); light color scheme -> transparent
+    // RED, matching the dark/light alternate app icons already offered in
+    // AppIconPicker. This intentionally reuses those same source images
+    // (copied into the widget's own asset catalog, since a widget
+    // extension can't reference the main app target's asset catalog).
     private var appIconImage: some View {
-        Image("AppIconBadge")
+        Image(colorScheme == .dark ? "WidgetBadgeWhite" : "WidgetBadgeRed")
             .resizable()
             .scaledToFit()
             .frame(width: 22, height: 22)

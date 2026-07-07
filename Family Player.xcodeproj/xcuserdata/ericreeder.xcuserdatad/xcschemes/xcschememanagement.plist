@@ -7,12 +7,25 @@
 		<key>Family Player.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>0</integer>
+			<integer>1</integer>
 		</dict>
 		<key>FamilyPlayerWidgetExtension.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
+			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>21AECC912FEDFC6F0082ABFC</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>21F4B4572FE176D200D79A59</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>

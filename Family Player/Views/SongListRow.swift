@@ -8,6 +8,7 @@ import SwiftData
 
 struct SongListRow: View {
     @Environment(PlaybackEngine.self) private var engine
+    @Environment(\.songRowLayout) private var rowLayout
     let song: Song
     let scope: [Song]
     var style: RowStyle = .light
@@ -37,6 +38,14 @@ struct SongListRow: View {
         subtitleMode == .none ? 2 : 1
     }
 
+    // Columns (artist / album / duration) only make sense once there's a
+    // stacked subtitle to replace -- inside an Album's own detail view
+    // (.none) every row's artist/album is the same one already shown in
+    // the header, so no columns there regardless of available width.
+    private var showsColumns: Bool {
+        rowLayout != .compact && subtitleMode != .none
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             Button {
@@ -53,14 +62,29 @@ struct SongListRow: View {
                         size: 44,
                         cornerRadius: 4
                     )
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(song.displayTitle)
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(titleColor)
-                            .lineLimit(titleLineLimit)
-                        subtitle
+                    if showsColumns {
+                        // Its own, more generously-spaced group -- these
+                        // text columns need real breathing room between
+                        // them or they read as one crowded, run-together
+                        // block right on top of the title. The tight
+                        // spacing: 10 above is fine for icon-sized artwork,
+                        // not for column text.
+                        HStack(spacing: 28) {
+                            titleAndSubtitle
+                            artistColumn
+                            if rowLayout == .wide {
+                                albumColumn
+                            }
+                        }
+                        // This is the one flexible gap, so only duration +
+                        // download get pushed to the trailing edge instead
+                        // of every column spreading out to fill the row.
+                        Spacer(minLength: 12)
+                        durationColumn
+                    } else {
+                        titleAndSubtitle
+                        Spacer(minLength: 6)
                     }
-                    Spacer(minLength: 6)
                     DownloadStatusIcon(song: song, style: style)
                 }
                 .contentShape(Rectangle())
@@ -69,6 +93,66 @@ struct SongListRow: View {
 
             SongActionsMenu(song: song, fromPlaylist: fromPlaylist, style: style)
         }
+    }
+
+    // iPhone (and any compact-width context) keeps the original stacked
+    // title-over-subtitle layout -- there's no room for separate columns.
+    // On iPad, once columns take over for artist/album/duration, the title
+    // stands alone and just needs to flex to fill whatever space is left.
+    @ViewBuilder
+    private var titleAndSubtitle: some View {
+        if showsColumns {
+            // A leading-aligned, capped width -- not .infinity -- so the
+            // title sits close to the artist/album columns right after it
+            // on the left, instead of stretching to fill the row and
+            // shoving every other column against the trailing edge.
+            Text(song.displayTitle)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(titleColor)
+                .lineLimit(1)
+                .frame(width: 220, alignment: .leading)
+        } else {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(song.displayTitle)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(titleColor)
+                    .lineLimit(titleLineLimit)
+                subtitle
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var artistColumn: some View {
+        Text(song.album?.persona?.name ?? "")
+            .font(.subheadline)
+            .foregroundStyle(subtitleColor)
+            .lineLimit(1)
+            .frame(width: 130, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var albumColumn: some View {
+        Text(song.album?.title ?? "")
+            .font(.subheadline)
+            .foregroundStyle(subtitleColor)
+            .lineLimit(1)
+            .frame(width: 150, alignment: .leading)
+    }
+
+    private var durationText: String {
+        guard song.duration > 0 else { return "" }
+        let totalSeconds = Int(song.duration.rounded())
+        return String(format: "%d:%02d", totalSeconds / 60, totalSeconds % 60)
+    }
+
+    @ViewBuilder
+    private var durationColumn: some View {
+        Text(durationText)
+            .font(.caption)
+            .foregroundStyle(subtitleColor)
+            .monospacedDigit()
+            .frame(width: 40, alignment: .trailing)
     }
 
     @ViewBuilder
@@ -121,7 +205,7 @@ struct DownloadMenuButton: View {
     let song: Song
 
     var body: some View {
-        if song.downloadCachePath != nil {
+        if downloads.downloadedStableIDs.contains(song.stableID) {
             Button(role: .destructive) {
                 downloads.remove(song: song)
             } label: {
@@ -145,7 +229,7 @@ struct DownloadStatusIcon: View {
     var body: some View {
         if downloads.isDownloading(song) {
             ProgressView().controlSize(.mini)
-        } else if song.downloadCachePath != nil {
+        } else if downloads.downloadedStableIDs.contains(song.stableID) {
             Image(systemName: "arrow.down.circle.fill")
                 .font(.caption2)
                 .foregroundStyle(style == .dark ? Color.white.opacity(0.7) : Color.secondary)
@@ -159,11 +243,11 @@ struct BulkDownloadMenuItems: View {
     let label: String
 
     private var anyNotDownloaded: Bool {
-        songs.contains { $0.downloadCachePath == nil }
+        songs.contains { !downloads.downloadedStableIDs.contains($0.stableID) }
     }
 
     private var anyDownloaded: Bool {
-        songs.contains { $0.downloadCachePath != nil }
+        songs.contains { downloads.downloadedStableIDs.contains($0.stableID) }
     }
 
     var body: some View {

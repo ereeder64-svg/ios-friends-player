@@ -7,8 +7,13 @@ import SwiftUI
 import SwiftData
 
 struct SearchTabView: View {
-    @Query(sort: \Song.title) private var allSongs: [Song]
+    @Query(sort: \Song.title) private var allSongsRaw: [Song]
+    @Environment(ShareAccessCoordinator.self) private var coordinator
     @State private var searchText = ""
+
+    private var allSongs: [Song] {
+        allSongsRaw.filter { coordinator.connectedShareNames.contains($0.shareName) }
+    }
     @State private var searchLyrics = false
     @State private var lyricHits: Set<String> = []
     @State private var isSearchingLyrics = false

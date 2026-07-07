@@ -7,18 +7,24 @@ import SwiftUI
 import SwiftData
 
 struct AllAlbumsView: View {
+    @Environment(ShareAccessCoordinator.self) private var coordinator
     @Query(sort: \Album.title) private var albums: [Album]
     @State private var searchText = ""
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 20),
-        GridItem(.flexible(), spacing: 20)
-    ]
+    private let columns = AdaptiveTileGrid.columns
+
+    // Only show albums from shares this device actually has connected --
+    // Song/Album sync globally via CloudKit, but a share this device hasn't
+    // linked has no local file access, so it'd just show placeholder
+    // artwork and fail to play.
+    private var reachableAlbums: [Album] {
+        albums.filter { coordinator.connectedShareNames.contains($0.shareName) }
+    }
 
     private var filteredAlbums: [Album] {
-        guard !searchText.isEmpty else { return albums }
+        guard !searchText.isEmpty else { return reachableAlbums }
         let q = searchText.lowercased()
-        return albums.filter { album in
+        return reachableAlbums.filter { album in
             album.title.lowercased().contains(q) ||
             (album.persona?.name.lowercased().contains(q) ?? false)
         }

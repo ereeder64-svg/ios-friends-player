@@ -14,13 +14,31 @@ final class DownloadManager {
     private(set) var inFlightStableIDs: Set<String> = []
     private var scheduledStableIDs: Set<String> = []
     weak var coordinator: ShareAccessCoordinator?
+    var modelContext: ModelContext?
+
+    // Song.downloadCachePath is computed from on-disk presence (not a
+    // stored/synced SwiftData property -- see Song.swift), which means
+    // SwiftUI has no persisted-attribute change to react to when a
+    // download/removal completes: the file changes, but nothing about the
+    // model itself does. This observable set is the actual reactivity
+    // signal views should key off of for "is this song downloaded" UI.
+    private(set) var downloadedStableIDs: Set<String> = []
+
+    /// Populates downloadedStableIDs from what's actually on disk right now.
+    /// Call once at launch (after modelContext is set) so already-downloaded
+    /// songs from a previous session show correctly immediately.
+    func refreshDownloadedStableIDs() {
+        guard let modelContext,
+              let songs = try? modelContext.fetch(FetchDescriptor<Song>()) else { return }
+        downloadedStableIDs = Set(songs.filter { $0.downloadCachePath != nil }.map(\.stableID))
+    }
 
     nonisolated static func downloadDirectory() -> URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return docs.appendingPathComponent("Downloads", isDirectory: true)
     }
 
-    private nonisolated static func destinationURL(for song: Song) -> URL {
+    nonisolated static func destinationURL(for song: Song) -> URL {
         let dir = downloadDirectory()
         let safeRel = song.relativePath.replacingOccurrences(of: "/", with: "_")
         return dir.appendingPathComponent("\(song.shareName)__\(safeRel)")
@@ -58,14 +76,10 @@ final class DownloadManager {
             return
         }
         scheduledStableIDs.remove(song.stableID)
-
-        song.downloadCachePath = destURL.path
-        song.downloadedAt = Date()
-        if let attrs = try? FileManager.default.attributesOfItem(atPath: destURL.path),
-           let size = attrs[.size] as? Int64 {
-            song.downloadSizeBytes = size
-        }
-        try? song.modelContext?.save()
+        // downloadCachePath/downloadedAt/downloadSizeBytes are computed from
+        // this file's on-disk presence (see Song.swift) -- nothing to set,
+        // but bump the observable set so SwiftUI actually notices.
+        downloadedStableIDs.insert(song.stableID)
     }
 
     func remove(song: Song) {
@@ -73,10 +87,7 @@ final class DownloadManager {
         if let path = song.downloadCachePath {
             try? FileManager.default.removeItem(atPath: path)
         }
-        song.downloadCachePath = nil
-        song.downloadedAt = nil
-        song.downloadSizeBytes = 0
-        try? song.modelContext?.save()
+        downloadedStableIDs.remove(song.stableID)
     }
 
     // MARK: - Bulk
@@ -106,11 +117,11 @@ final class DownloadManager {
     }
 
     func clearAll(context: ModelContext) {
-        let descriptor = FetchDescriptor<Song>(
-            predicate: #Predicate { $0.downloadCachePath != nil }
-        )
-        if let downloaded = try? context.fetch(descriptor) {
-            for song in downloaded {
+        // downloadCachePath is now computed from on-disk presence, so it
+        // can't be used in a #Predicate -- fetch everything and filter in
+        // Swift instead. (Simplest, and this is only user-initiated.)
+        if let allSongs = try? context.fetch(FetchDescriptor<Song>()) {
+            for song in allSongs where song.downloadCachePath != nil {
                 remove(song: song)
             }
         }
@@ -120,12 +131,17 @@ final class DownloadManager {
         }
     }
 
-    func totalDownloadedBytes(context: ModelContext) -> Int64 {
-        let descriptor = FetchDescriptor<Song>(
-            predicate: #Predicate { $0.downloadCachePath != nil }
-        )
-        guard let songs = try? context.fetch(descriptor) else { return 0 }
-        return songs.reduce(0) { $0 + $1.downloadSizeBytes }
+    /// Total size of everything actually downloaded to this device.
+    func totalDownloadedBytes() -> Int64 {
+        let dir = Self.downloadDirectory()
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: dir,
+            includingPropertiesForKeys: [.fileSizeKey]
+        ) else { return 0 }
+        return files.reduce(Int64(0)) { total, url in
+            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+            return total + Int64(size)
+        }
     }
 
     func isDownloading(_ song: Song) -> Bool {

@@ -7,10 +7,12 @@ import SwiftUI
 import SwiftData
 
 struct ShareInvitationsView: View {
-    @Query private var bookmarks: [ShareBookmark]
+    // ShareBookmark lives in its own local-only ModelContainer (not the
+    // app's shared/synced one), so it can't be read via @Query here.
+    @Environment(ShareAccessCoordinator.self) private var coordinator
 
     private var connectedNames: Set<String> {
-        Set(bookmarks.map { $0.shareName })
+        Set(coordinator.configuredShareNames())
     }
 
     var body: some View {
