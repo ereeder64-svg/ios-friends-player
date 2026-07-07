@@ -567,13 +567,13 @@ final class LibraryScanner {
         }
         let albumDescriptor = FetchDescriptor<Album>()
         if let albums = try? context.fetch(albumDescriptor) {
-            for album in albums where album.songs.isEmpty {
+            for album in albums where (album.songs ?? []).isEmpty {
                 context.delete(album)
             }
         }
         let personaDescriptor = FetchDescriptor<Persona>()
         if let personas = try? context.fetch(personaDescriptor) {
-            for persona in personas where persona.albums.isEmpty {
+            for persona in personas where (persona.albums ?? []).isEmpty {
                 context.delete(persona)
             }
         }

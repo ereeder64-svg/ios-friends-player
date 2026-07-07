@@ -23,10 +23,10 @@ struct PersonasListView: View {
 
     private var allSongs: [Song] {
         filteredPersonas.flatMap { persona in
-            persona.albums
+            (persona.albums ?? [])
                 .sorted { $0.title < $1.title }
                 .flatMap { album in
-                    album.songs.sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
+                    (album.songs ?? []).sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
                 }
         }
     }
@@ -87,12 +87,12 @@ struct PersonaDetailView: View {
     let persona: Persona
 
     private var sortedAlbums: [Album] {
-        persona.albums.sorted { $0.title < $1.title }
+        (persona.albums ?? []).sorted { $0.title < $1.title }
     }
 
     private var allSongs: [Song] {
         sortedAlbums.flatMap { album in
-            album.songs.sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
+            (album.songs ?? []).sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
         }
     }
 

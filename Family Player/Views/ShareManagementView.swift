@@ -233,7 +233,7 @@ struct ShareManagementView: View {
 
         let personaDescriptor = FetchDescriptor<Persona>()
         if let personas = try? modelContext.fetch(personaDescriptor) {
-            for persona in personas where persona.albums.isEmpty {
+            for persona in personas where (persona.albums ?? []).isEmpty {
                 modelContext.delete(persona)
             }
         }

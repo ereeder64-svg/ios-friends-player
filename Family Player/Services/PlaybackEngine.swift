@@ -181,7 +181,7 @@ final class PlaybackEngine {
 
         let played = allAlbums
             .compactMap { album -> (Album, Date)? in
-                guard let last = album.songs.compactMap(\.lastPlayedAt).max() else { return nil }
+                guard let last = (album.songs ?? []).compactMap(\.lastPlayedAt).max() else { return nil }
                 return (album, last)
             }
             .sorted { $0.1 > $1.1 }

@@ -79,7 +79,7 @@ struct FamilyPlayerWidgetEntryView: View {
         Image("AppIconBadge")
             .resizable()
             .scaledToFit()
-            .frame(width: 20, height: 20)
+            .frame(width: 22, height: 22)
             .clipShape(Circle())
     }
 
@@ -93,11 +93,13 @@ struct FamilyPlayerWidgetEntryView: View {
     // Title: up to 2 lines, shrinks between these bounds before truncating.
     // Floors raised now that displayed titles no longer carry the "NN "
     // track-number prefix — there's more room before text needs to shrink.
-    private static let titleMaxSize: CGFloat = 16
+    // 2x2 gets the smaller of the two size ranges — the 2x4 is roughly
+    // twice as wide, so it gets the larger range (see mediumTitle* below).
+    private static let titleMaxSize: CGFloat = 14
     private static let titleMinSize: CGFloat = 13.5
     // Artist: always exactly 1 line, shrinks between these bounds.
-    private static let artistMaxSize: CGFloat = 10
-    private static let artistMinSize: CGFloat = 9.5
+    private static let artistMaxSize: CGFloat = 11
+    private static let artistMinSize: CGFloat = 10.5
 
     private var smallLayout: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -130,7 +132,10 @@ struct FamilyPlayerWidgetEntryView: View {
             // Right column: icon pinned near the top, play button pinned
             // near the bottom — both spanning the same full height as the
             // left column, so the button's floor always lines up with it.
-            VStack(spacing: 0) {
+            // Trailing-aligned so the (narrower) icon lines up with the
+            // right edge of the (wider) play button below it, instead of
+            // sitting centered above it.
+            VStack(alignment: .trailing, spacing: 0) {
                 appIconImage
                 Spacer(minLength: 0)
                 Button(intent: PlayPauseIntent()) {
@@ -150,10 +155,14 @@ struct FamilyPlayerWidgetEntryView: View {
 
     // Same rationale as the small layout: floors raised now that the
     // trailing track-number prefix is gone from displayed titles.
-    private static let mediumTitleMaxSize: CGFloat = 14
-    private static let mediumTitleMinSize: CGFloat = 12.5
-    private static let mediumArtistMaxSize: CGFloat = 11
-    private static let mediumArtistMinSize: CGFloat = 10
+    // 2x4 is roughly twice as wide as the 2x2, so it gets the larger
+    // title size range (the 2x2's old range, before this swap).
+    private static let mediumTitleMaxSize: CGFloat = 16
+    private static let mediumTitleMinSize: CGFloat = 14.5
+    // Artist floor raised 1pt from before; max bumped along with it to
+    // preserve shrink headroom (min would otherwise meet the ceiling).
+    private static let mediumArtistMaxSize: CGFloat = 13
+    private static let mediumArtistMinSize: CGFloat = 12
 
     private var mediumLayout: some View {
         VStack(alignment: .leading, spacing: 10) {

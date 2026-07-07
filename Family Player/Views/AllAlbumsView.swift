@@ -26,7 +26,7 @@ struct AllAlbumsView: View {
 
     private var allSongs: [Song] {
         filteredAlbums.flatMap { album in
-            album.songs.sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
+            (album.songs ?? []).sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
         }
     }
 
@@ -83,7 +83,7 @@ struct AlbumDetailView: View {
     let album: Album
 
     private var sortedSongs: [Song] {
-        album.songs.sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
+        (album.songs ?? []).sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
     }
 
     var body: some View {
@@ -108,7 +108,7 @@ struct AlbumDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(.white.opacity(0.8))
                     }
-                    Text("\(album.songs.count) song\(album.songs.count == 1 ? "" : "s")")
+                    Text("\((album.songs ?? []).count) song\((album.songs ?? []).count == 1 ? "" : "s")")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -120,6 +120,7 @@ struct AlbumDetailView: View {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(sortedSongs.enumerated()), id: \.element.stableID) { idx, song in
                         SongListRow(song: song, scope: sortedSongs, style: .dark, subtitleMode: .none)
+                            .padding(.vertical, 6)
                         if idx < sortedSongs.count - 1 {
                             Divider()
                                 .background(.white.opacity(0.15))

@@ -8,11 +8,16 @@ import SwiftData
 
 @Model
 final class Persona {
-    @Attribute(.unique) var name: String
+    // No @Attribute(.unique): CloudKit forbids it. fetchOrCreatePersona(...)
+    // in LibraryScanner already fetches by name before inserting, so
+    // app-level dedup already exists independent of this constraint.
+    var name: String = ""
     var artworkCachePath: String?
 
+    // CloudKit requires ALL relationships be optional, including to-many
+    // (array) relationships -- a default empty array is not sufficient.
     @Relationship(deleteRule: .cascade, inverse: \Album.persona)
-    var albums: [Album] = []
+    var albums: [Album]? = []
 
     init(name: String) {
         self.name = name

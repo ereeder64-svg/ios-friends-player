@@ -45,7 +45,7 @@ struct PlaylistTile: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text("\(playlist.entries.count) song\(playlist.entries.count == 1 ? "" : "s")")
+            Text("\((playlist.entries ?? []).count) song\((playlist.entries ?? []).count == 1 ? "" : "s")")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

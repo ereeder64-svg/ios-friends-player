@@ -8,25 +8,44 @@ import SwiftData
 
 @Model
 final class Song {
-    @Attribute(.unique) var stableID: String
-    var title: String
+    // NOTE on CloudKit readiness (no CloudKit sync enabled yet, this is
+    // schema prep for a possible future iPad app):
+    // - No @Attribute(.unique): CloudKit forbids it. Every creation path
+    //   (LibraryScanner.processSong) already fetches by stableID before
+    //   inserting, so app-level dedup already exists independent of this
+    //   constraint -- removing it doesn't change current behavior.
+    // - Every non-optional property below has an inline default value,
+    //   which CloudKit requires (optional-or-default at declaration).
+    var stableID: String = ""
+    var title: String = ""
     var trackNumber: Int?
     var album: Album?
-    var shareName: String
-    var relativePath: String
-    var hasLyrics: Bool
-    var duration: Double
-    var metadataLoaded: Bool
-    var dateAddedToLibrary: Date
+    var shareName: String = ""
+    var relativePath: String = ""
+    var hasLyrics: Bool = false
+    var duration: Double = 0
+    var metadataLoaded: Bool = false
+    var dateAddedToLibrary: Date = Date()
 
-    var isFavorite: Bool
-    var hasBeenPlayed: Bool
+    var isFavorite: Bool = false
+    var hasBeenPlayed: Bool = false
     var lastPlayedAt: Date?
-    var playCount: Int
+    var playCount: Int = 0
 
     var downloadCachePath: String?
     var downloadedAt: Date?
-    var downloadSizeBytes: Int64
+    var downloadSizeBytes: Int64 = 0
+
+    // Inverse side of PlaylistEntry.song. Previously PlaylistEntry.song had
+    // no @Relationship/inverse at all, which is why deleting a Song left
+    // orphaned PlaylistEntry rows (worked around by RootView's
+    // purgeOrphanedPlaylistEntries() scan on launch -- left in place as a
+    // safety net for any pre-existing orphans, but this fixes the root
+    // cause going forward: deleting a Song now cascades to its entries).
+    // CloudKit requires ALL relationships be optional, including to-many
+    // (array) relationships -- a default empty array is not sufficient.
+    @Relationship(deleteRule: .cascade, inverse: \PlaylistEntry.song)
+    var playlistEntries: [PlaylistEntry]? = []
 
     init(
         stableID: String,

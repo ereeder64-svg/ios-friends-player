@@ -94,7 +94,7 @@ struct SongActionsMenu: View {
     }
 
     private func removeFromPlaylist(_ playlist: Playlist) {
-        if let entry = playlist.entries.first(where: { $0.song?.stableID == song.stableID }) {
+        if let entry = (playlist.entries ?? []).first(where: { $0.song?.stableID == song.stableID }) {
             modelContext.delete(entry)
             try? modelContext.save()
         }

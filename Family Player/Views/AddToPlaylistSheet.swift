@@ -38,7 +38,7 @@ struct AddToPlaylistSheet: View {
                                         Image(systemName: "checkmark")
                                             .foregroundStyle(.secondary)
                                     } else {
-                                        Text("\(playlist.entries.count)")
+                                        Text("\((playlist.entries ?? []).count)")
                                             .foregroundStyle(.secondary)
                                             .font(.caption)
                                     }
@@ -66,12 +66,12 @@ struct AddToPlaylistSheet: View {
     }
 
     private func alreadyContains(_ playlist: Playlist) -> Bool {
-        playlist.entries.contains { $0.song?.stableID == song.stableID }
+        (playlist.entries ?? []).contains { $0.song?.stableID == song.stableID }
     }
 
     private func addSong(to playlist: Playlist) {
         guard !alreadyContains(playlist) else { return }
-        let position = playlist.entries.count
+        let position = (playlist.entries ?? []).count
         let entry = PlaylistEntry(playlist: playlist, song: song, position: position)
         modelContext.insert(entry)
         try? modelContext.save()
