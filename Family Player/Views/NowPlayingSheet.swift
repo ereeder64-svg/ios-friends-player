@@ -8,6 +8,7 @@ import SwiftData
 
 struct NowPlayingSheet: View {
     @Environment(PlaybackEngine.self) private var engine
+    @Environment(FavoritesSharingService.self) private var favoritesSharing
     @Environment(\.dismiss) private var dismiss
     @State private var showingLyrics = false
 
@@ -40,6 +41,7 @@ struct NowPlayingSheet: View {
                     if let song = engine.currentSong {
                         song.isFavorite.toggle()
                         try? song.modelContext?.save()
+                        Task { await favoritesSharing.syncFavorite(song) }
                     }
                 } label: {
                     Image(systemName: (engine.currentSong?.isFavorite ?? false) ? "heart.fill" : "heart")

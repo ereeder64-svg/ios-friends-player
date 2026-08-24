@@ -83,6 +83,8 @@ struct ShareManagementView: View {
             }
         }
         .navigationTitle("Manage Shares")
+        // Pushed from Library -- keeps the drawer reachable this deep too.
+        .sidebarDrawerToolbar()
         .fileImporter(
             isPresented: $isPickerPresented,
             allowedContentTypes: [.folder],

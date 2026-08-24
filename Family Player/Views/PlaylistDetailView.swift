@@ -131,6 +131,9 @@ struct PlaylistDetailView: View {
                 }
             }
         }
+        // Pushed from PlaylistsTabContent -- same reopen-the-drawer fix as
+        // Persona/Album detail.
+        .sidebarDrawerToolbar()
         .sheet(isPresented: $showRenameSheet) {
             RenamePlaylistSheet(playlist: playlist)
         }

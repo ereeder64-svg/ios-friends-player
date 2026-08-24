@@ -137,5 +137,10 @@ struct PersonaDetailView: View {
                 }
             }
         }
+        // Pushed from PersonasListView -- without this, drilling into a
+        // persona with the iPad sidebar collapsed left no way back to the
+        // drawer at all (its own local .toolbar above replaces, rather
+        // than adds to, whatever the parent screen had).
+        .sidebarDrawerToolbar()
     }
 }

@@ -41,6 +41,7 @@ struct ShareInvitationsView: View {
             }
         }
         .navigationTitle("Accept Shares")
+        .sidebarDrawerToolbar()
     }
 
     @ViewBuilder

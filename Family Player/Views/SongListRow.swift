@@ -39,9 +39,10 @@ struct SongListRow: View {
     }
 
     // Columns (artist / album / duration) only make sense once there's a
-    // stacked subtitle to replace -- inside an Album's own detail view
-    // (.none) every row's artist/album is the same one already shown in
-    // the header, so no columns there regardless of available width.
+    // stacked subtitle to replace -- on iPhone (.compact) there's no room
+    // for them regardless of subtitleMode, and callers that pass .none
+    // (nothing worth showing at all, e.g. Album detail on iPhone) don't
+    // get columns either.
     private var showsColumns: Bool {
         rowLayout != .compact && subtitleMode != .none
     }
@@ -69,17 +70,25 @@ struct SongListRow: View {
                         // block right on top of the title. The tight
                         // spacing: 10 above is fine for icon-sized artwork,
                         // not for column text.
-                        HStack(spacing: 28) {
+                        HStack(spacing: 40) {
                             titleAndSubtitle
                             artistColumn
-                            if rowLayout == .wide {
+                            // Album detail's rows pass .artistOnly since
+                            // every row's album is the one already titling
+                            // the screen -- a repeated album column there
+                            // would be pure redundancy, so it's gated on
+                            // .artistAndAlbum specifically, not just .wide.
+                            if rowLayout == .wide && subtitleMode == .artistAndAlbum {
                                 albumColumn
                             }
                         }
-                        // This is the one flexible gap, so only duration +
-                        // download get pushed to the trailing edge instead
-                        // of every column spreading out to fill the row.
+                        // A small, fixed gap rather than a big empty one --
+                        // titleAndSubtitle's own bounded maxWidth (below) is
+                        // what actually absorbs most of the freed space on
+                        // wide rows, so duration/download don't end up
+                        // stranded far from the rest of the row.
                         Spacer(minLength: 12)
+                            .frame(maxWidth: 32)
                         durationColumn
                     } else {
                         titleAndSubtitle
@@ -99,18 +108,25 @@ struct SongListRow: View {
     // title-over-subtitle layout -- there's no room for separate columns.
     // On iPad, once columns take over for artist/album/duration, the title
     // stands alone and just needs to flex to fill whatever space is left.
+    // A bounded (not unbounded .infinity) max width: SwiftUI grows a view
+    // like this to fill available space up to the cap before handing any
+    // remainder to the Spacer, so the title actually uses the freed-up
+    // room instead of truncating while empty space sits unused further
+    // right. Capped, rather than truly unbounded, so it still can't shove
+    // artist/album/duration all the way to the trailing edge the way an
+    // .infinity maxWidth did before.
+    private var titleMaxWidth: CGFloat {
+        rowLayout == .wide ? 360 : 480
+    }
+
     @ViewBuilder
     private var titleAndSubtitle: some View {
         if showsColumns {
-            // A leading-aligned, capped width -- not .infinity -- so the
-            // title sits close to the artist/album columns right after it
-            // on the left, instead of stretching to fill the row and
-            // shoving every other column against the trailing edge.
             Text(song.displayTitle)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(titleColor)
                 .lineLimit(1)
-                .frame(width: 220, alignment: .leading)
+                .frame(maxWidth: titleMaxWidth, alignment: .leading)
         } else {
             VStack(alignment: .leading, spacing: 2) {
                 Text(song.displayTitle)
@@ -128,7 +144,7 @@ struct SongListRow: View {
             .font(.subheadline)
             .foregroundStyle(subtitleColor)
             .lineLimit(1)
-            .frame(width: 130, alignment: .leading)
+            .frame(maxWidth: 200, alignment: .leading)
     }
 
     @ViewBuilder
@@ -137,7 +153,7 @@ struct SongListRow: View {
             .font(.subheadline)
             .foregroundStyle(subtitleColor)
             .lineLimit(1)
-            .frame(width: 150, alignment: .leading)
+            .frame(maxWidth: 220, alignment: .leading)
     }
 
     private var durationText: String {
@@ -185,12 +201,14 @@ struct SongListRow: View {
 }
 
 struct FavoriteMenuButton: View {
+    @Environment(FavoritesSharingService.self) private var favoritesSharing
     let song: Song
 
     var body: some View {
         Button {
             song.isFavorite.toggle()
             try? song.modelContext?.save()
+            Task { await favoritesSharing.syncFavorite(song) }
         } label: {
             Label(
                 song.isFavorite ? "Remove from Favorites" : "Add to Favorites",

@@ -92,6 +92,19 @@ final class DownloadManager {
 
     // MARK: - Bulk
 
+    /// Downloads every not-yet-downloaded song in the library, one at a
+    /// time, stopping as soon as Wi-Fi is no longer available (re-running
+    /// this later, e.g. after the next scan, picks up wherever it left off
+    /// since it only ever looks at what's still missing).
+    func downloadAllMissing() async {
+        guard let modelContext,
+              let allSongs = try? modelContext.fetch(FetchDescriptor<Song>()) else { return }
+        for song in allSongs where song.downloadCachePath == nil {
+            guard NetworkMonitor.shared.isOnWiFi else { return }
+            await download(song: song)
+        }
+    }
+
     func download(songs: [Song]) async {
         for song in songs where song.downloadCachePath == nil {
             scheduledStableIDs.insert(song.stableID)

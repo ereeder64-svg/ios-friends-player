@@ -42,11 +42,17 @@ final class LibraryScanner {
 
     var progress = ScanProgress()
 
+    weak var downloadManager: DownloadManager?
+
     private let publicShareName = "Public Share"
     private let defaultPersona = "Eric Reeder"
 
     func scan(coordinator: ShareAccessCoordinator, context: ModelContext) async {
         guard !progress.isScanning else { return }
+        guard NetworkMonitor.shared.isOnWiFi else {
+            progress.lastError = "Wi-Fi required to scan the library."
+            return
+        }
         progress.isScanning = true
         progress.scannedCount = 0
         progress.totalCount = 0
@@ -115,6 +121,15 @@ final class LibraryScanner {
             context: context
         )
         mergeDuplicateLibraryEntries(context: context)
+
+        // Runs independently of `progress.isScanning` (which the `defer`
+        // above is about to clear) so the scan UI doesn't stay in a
+        // "Scanning..." state for however long the download pass takes --
+        // download progress is separately observable via
+        // DownloadManager.downloadedStableIDs.
+        if let downloadManager {
+            Task { await downloadManager.downloadAllMissing() }
+        }
     }
 
     // MARK: - Dedup (self-healing for legacy duplicate records)

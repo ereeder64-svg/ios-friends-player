@@ -21,7 +21,7 @@ import SwiftUI
 ///     the drawer button there brings the sidebar column back and that
 ///     toolbar row disappears -- there is only ever one "drawer" control
 ///     visible at a time.
-enum SidebarItem: String, Identifiable, CaseIterable {
+enum SidebarItem: String, Identifiable, CaseIterable, Hashable {
     case search
     case new
     case personas
@@ -33,6 +33,16 @@ enum SidebarItem: String, Identifiable, CaseIterable {
     case library
 
     var id: String { rawValue }
+
+    // On iPhone/portrait's tab bar these four don't get their own tab --
+    // they only exist one level deep, pushed inside the Library tab.
+    // Landscape's flat sidebar treats them (and Library itself) as equal
+    // top-level items. This is the mapping used to reconcile the two
+    // whenever the cross-orientation selection needs to pick an actual
+    // tab-bar destination (see MainTabView.activeTabBinding) or decide
+    // whether Library's own NavigationStack should have something pushed
+    // (see LibraryTabView).
+    static let nestedUnderLibraryTab: Set<SidebarItem> = [.search, .personas, .albums, .songs]
 
     var title: String {
         switch self {
@@ -65,21 +75,45 @@ enum SidebarItem: String, Identifiable, CaseIterable {
 
 struct SidebarNavigationView: View {
     @Environment(PlaybackEngine.self) private var engine
-    @State private var selection: SidebarItem? = .albums
-    @State private var isSidebarExpanded = true
+    // Owned here and pushed into the environment for every screen inside
+    // detailContent's NavigationStack (see SidebarDrawerToolbar.swift) --
+    // that's what lets a pushed Persona/Album/Playlist detail screen (or
+    // anything else drilled into) still show the reopen button and get
+    // back to the drawer, instead of only the root page of each section
+    // having it.
+    // Owned by MainTabView (which never gets torn down when the device
+    // rotates) and passed in here, instead of being a local @State --
+    // that's what lets "which section you're on" survive the
+    // landscape-sidebar <-> portrait-tab-bar swap, since that swap
+    // recreates this whole view from scratch every time.
+    @Bindable var drawerState: SidebarDrawerState
     @State private var detailWidth: CGFloat = 0
 
     private let sidebarWidth: CGFloat = 260
 
+    // Extra breathing room between the sidebar's divider and the detail
+    // column's own content (title, search bar, play pill, song rows).
+    // Only needed when the sidebar is actually showing -- when it's
+    // collapsed, the detail column already starts at the screen edge and
+    // everything lines up correctly on its own (system nav title/search
+    // inset matches the custom 20pt padding used elsewhere). With the
+    // sidebar open, the system title/search chrome hugs the divider much
+    // more tightly than the custom-padded content below it, so without
+    // this the "Albums"/"Playlists"/"Personas" title and search field
+    // visually stick to the divider while the Play pill and song rows
+    // sit further right.
+    private let sidebarContentBuffer: CGFloat = 20
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                if isSidebarExpanded {
+                if drawerState.isSidebarExpanded {
                     sidebarColumn
                         .frame(width: sidebarWidth)
                     Divider()
                 }
                 detailContent
+                    .padding(.leading, drawerState.isSidebarExpanded ? sidebarContentBuffer : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
@@ -106,7 +140,7 @@ struct SidebarNavigationView: View {
                 Spacer()
                 Button {
                     withAnimation(.easeInOut(duration: 0.25)) {
-                        isSidebarExpanded = false
+                        drawerState.isSidebarExpanded = false
                     }
                 } label: {
                     Image(systemName: "sidebar.left")
@@ -117,7 +151,7 @@ struct SidebarNavigationView: View {
             .padding(.top, 12)
             .padding(.bottom, 4)
 
-            List(selection: $selection) {
+            List(selection: $drawerState.selection) {
                 Section {
                     sidebarRow(.search)
                     sidebarRow(.new)
@@ -157,7 +191,7 @@ struct SidebarNavigationView: View {
     // switching sections doesn't leave a stale pushed detail view behind.
     private var detailContent: some View {
         NavigationStack {
-            detailView(for: selection ?? .albums)
+            detailView(for: drawerState.selection ?? .albums)
                 // The detail column's actual rendered width is what determines
                 // how much room a song row has -- it shrinks when the sidebar
                 // is showing and grows to the full screen width once it's
@@ -168,44 +202,23 @@ struct SidebarNavigationView: View {
                 } action: { newValue in
                     detailWidth = newValue
                 }
-                .environment(
-                    \.songRowLayout,
-                    SongRowLayoutMode.resolve(width: detailWidth, horizontalSizeClass: .regular)
-                )
-                .toolbar { collapsedToolbarContent }
+                .sidebarDrawerToolbar()
         }
-        .id(selection)
-    }
-
-    // Only present while the sidebar is hidden -- this is the "top menu"
-    // that takes over its job: a button to bring the sidebar back, plus
-    // one icon per section so the sections are still reachable without
-    // reopening it.
-    @ToolbarContentBuilder
-    private var collapsedToolbarContent: some ToolbarContent {
-        if !isSidebarExpanded {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        isSidebarExpanded = true
-                    }
-                } label: {
-                    Image(systemName: "sidebar.left")
-                }
-                .accessibilityLabel("Show Sidebar")
-            }
-            ToolbarItemGroup(placement: .navigationBarLeading) {
-                ForEach(SidebarItem.allCases) { item in
-                    Button {
-                        selection = item
-                    } label: {
-                        Image(systemName: item.systemImage)
-                    }
-                    .foregroundStyle(selection == item ? Color.accentColor : Color.secondary)
-                    .accessibilityLabel(item.title)
-                }
-            }
-        }
+        .id(drawerState.selection)
+        // Both of these need to live OUTSIDE the NavigationStack, not on the
+        // root content inside it. A view pushed via NavigationLink (e.g.
+        // Albums -> a specific album) inherits environment from where the
+        // NavigationStack itself sits, not from modifiers stuck onto
+        // whichever root page happens to be showing at the time -- that's
+        // why sidebarDrawerState (already out here) reaches pushed screens
+        // fine, while songRowLayout, when it lived inside on detailView(...),
+        // silently fell back to its .compact default for every pushed
+        // screen even though the root page read the right value.
+        .environment(
+            \.songRowLayout,
+            SongRowLayoutMode.resolve(width: detailWidth, horizontalSizeClass: .regular)
+        )
+        .environment(\.sidebarDrawerState, drawerState)
     }
 
     // All of these are the bare *Content variants (no internal

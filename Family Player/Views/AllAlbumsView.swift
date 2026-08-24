@@ -86,7 +86,17 @@ struct AllAlbumsView: View {
 
 struct AlbumDetailView: View {
     @Environment(PlaybackEngine.self) private var engine
+    @Environment(\.songRowLayout) private var rowLayout
     let album: Album
+
+    // The album's own name is already the screen title, so it'd be
+    // redundant as a per-row column -- but on iPad there's real width
+    // going unused next to the title. Fill it with the persona/artist
+    // name instead (still nothing on iPhone: compact rows stay exactly
+    // as they were, title-only, no subtitle).
+    private var rowSubtitleMode: SongListRow.SubtitleMode {
+        rowLayout == .compact ? .none : .artistOnly
+    }
 
     private var sortedSongs: [Song] {
         (album.songs ?? []).sorted { ($0.trackNumber ?? 0, $0.title) < ($1.trackNumber ?? 0, $1.title) }
@@ -125,7 +135,7 @@ struct AlbumDetailView: View {
 
                 LazyVStack(spacing: 0) {
                     ForEach(Array(sortedSongs.enumerated()), id: \.element.stableID) { idx, song in
-                        SongListRow(song: song, scope: sortedSongs, style: .dark, subtitleMode: .none)
+                        SongListRow(song: song, scope: sortedSongs, style: .dark, subtitleMode: rowSubtitleMode)
                             .padding(.vertical, 6)
                         if idx < sortedSongs.count - 1 {
                             Divider()
@@ -143,8 +153,9 @@ struct AlbumDetailView: View {
             }
         }
         .background(albumBackground)
-        .navigationTitle(album.title)
-        .navigationBarTitleDisplayMode(.inline)
+        // No .navigationTitle here on purpose -- the album title is
+        // already shown below the artwork; a second copy of it up in the
+        // nav bar was pure redundancy.
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -155,6 +166,10 @@ struct AlbumDetailView: View {
                 }
             }
         }
+        // Reachable from Albums, Personas, Search, and Playlists -- this
+        // is the "song view" that had no way back to the drawer once the
+        // iPad sidebar was collapsed.
+        .sidebarDrawerToolbar()
     }
 
     @ViewBuilder

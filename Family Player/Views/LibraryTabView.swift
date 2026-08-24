@@ -7,9 +7,44 @@ import SwiftUI
 import SwiftData
 
 struct LibraryTabView: View {
+    // Passed down from MainTabView so this stack's own push state can stay
+    // in sync with the shared cross-orientation section selection: tapping
+    // Search/Personas/Albums/Songs pushes here AND records that choice in
+    // sectionState (so rotating to landscape lands on the same section),
+    // and rotating in FROM landscape with one of those four selected
+    // pushes straight to it here too.
+    let sectionState: SidebarDrawerState
+
+    // Only these four are ever pushed onto Library's own stack -- Library
+    // itself, and every non-Library-nested item (New/Playlists/Favorites/
+    // Downloads), are handled by MainTabView's own tab selection instead.
+    private var path: Binding<[SidebarItem]> {
+        Binding(
+            get: {
+                guard let selection = sectionState.selection,
+                      SidebarItem.nestedUnderLibraryTab.contains(selection) else {
+                    return []
+                }
+                return [selection]
+            },
+            set: { newPath in
+                sectionState.selection = newPath.last ?? .library
+            }
+        )
+    }
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: path) {
             LibraryTabContent()
+                .navigationDestination(for: SidebarItem.self) { item in
+                    switch item {
+                    case .search: SearchTabView()
+                    case .personas: PersonasListView()
+                    case .albums: AllAlbumsView()
+                    case .songs: AllSongsView()
+                    default: EmptyView()
+                    }
+                }
         }
     }
 }
@@ -42,27 +77,25 @@ struct LibraryTabContent: View {
                 Section {
                     ScanProgressRow(progress: scanner.progress)
                 }
+            } else if let lastError = scanner.progress.lastError {
+                Section {
+                    Label(lastError, systemImage: "wifi.slash")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
 
                 Section("Browse") {
-                    NavigationLink {
-                        SearchTabView()
-                    } label: {
+                    NavigationLink(value: SidebarItem.search) {
                         Label("Search", systemImage: "magnifyingglass")
                     }
-                    NavigationLink {
-                        PersonasListView()
-                    } label: {
+                    NavigationLink(value: SidebarItem.personas) {
                         Label("Personas (\(personas.count))", systemImage: "person.2")
                     }
-                    NavigationLink {
-                        AllAlbumsView()
-                    } label: {
+                    NavigationLink(value: SidebarItem.albums) {
                         Label("Albums (\(albums.count))", systemImage: "square.stack")
                     }
-                    NavigationLink {
-                        AllSongsView()
-                    } label: {
+                    NavigationLink(value: SidebarItem.songs) {
                         Label("Songs (\(songs.count))", systemImage: "music.note")
                     }
                 }
@@ -72,6 +105,11 @@ struct LibraryTabContent: View {
                         ShareManagementView()
                     } label: {
                         Label("Manage Shares", systemImage: "folder.badge.gearshape")
+                    }
+                    NavigationLink {
+                        FavoritesSharingSettingsView()
+                    } label: {
+                        Label("Share My Favorites", systemImage: "person.2.circle")
                     }
                 }
 

@@ -18,6 +18,7 @@ struct RootView: View {
     @State private var scanner = LibraryScanner()
     @State private var engine = PlaybackEngine()
     @State private var downloads = DownloadManager()
+    @State private var favoritesSharing = FavoritesSharingService()
     @State private var hasCompletedSetup = false
     @State private var didResolve = false
     @State private var didKickOffInitialScan = false
@@ -31,18 +32,24 @@ struct RootView: View {
                     .environment(scanner)
                     .environment(engine)
                     .environment(downloads)
+                    .environment(favoritesSharing)
                     .task {
                         engine.coordinator = coordinator
                         engine.modelContext = modelContext
                         downloads.coordinator = coordinator
                         downloads.modelContext = modelContext
                         downloads.refreshDownloadedStableIDs()
+                        scanner.downloadManager = downloads
                         if !didKickOffInitialScan {
                             didKickOffInitialScan = true
                             await waitForInitialCloudKitImportIfNeeded(context: modelContext)
                             await scanner.scan(coordinator: coordinator, context: modelContext)
                         }
                         checkPendingAlbumDeepLink()
+                        await favoritesSharing.refresh(context: modelContext)
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .familyFavoritesShareAccepted)) { _ in
+                        Task { await favoritesSharing.refresh(context: modelContext) }
                     }
                     .sheet(item: $deepLinkAlbum) { album in
                         NavigationStack {
@@ -52,6 +59,7 @@ struct RootView: View {
                         .environment(scanner)
                         .environment(engine)
                         .environment(downloads)
+                        .environment(favoritesSharing)
                     }
             } else {
                 SetupView(coordinator: coordinator) {
@@ -69,6 +77,16 @@ struct RootView: View {
         .onOpenURL { url in
             deepLinkLog.debug("onOpenURL received: \(url.absoluteString, privacy: .public)")
             handleDeepLink(url)
+        }
+        .onChange(of: NetworkMonitor.shared.isOnWiFi) { _, isOnWiFi in
+            // Scanning/downloading only runs on Wi-Fi (see LibraryScanner.scan
+            // and DownloadManager.downloadAllMissing); a launch or refresh
+            // attempted on cellular just bails out with progress.lastError
+            // set, rather than retrying on its own. Re-kick the scan as soon
+            // as Wi-Fi actually becomes available so that dead end resolves
+            // itself instead of requiring a manual "Refresh Library" tap.
+            guard isOnWiFi, hasCompletedSetup, !scanner.progress.isScanning else { return }
+            Task { await scanner.scan(coordinator: coordinator, context: modelContext) }
         }
         .onChange(of: scenePhase) { _, newPhase in
             // Widget album taps now go through OpenAlbumIntent (openAppWhenRun),

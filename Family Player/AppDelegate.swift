@@ -4,6 +4,7 @@
 //
 
 import UIKit
+import CloudKit
 import OSLog
 
 private let pushLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "RemotePush")
@@ -58,5 +59,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // acknowledge the fetch so iOS knows we handled it.
         pushLog.debug("Received a remote (CloudKit) push notification.")
         completionHandler(.newData)
+    }
+
+    // Fires when the user taps a Family Favorites CKShare link (Messages,
+    // Mail, wherever it was sent) and the OS routes it to this app since
+    // the share belongs to this app's iCloud container. Unlike the
+    // familyplayer:// deep links elsewhere in the app, no custom URL scheme
+    // or onOpenURL handling is needed for this -- CloudKit share links are
+    // routed by the system straight to this delegate method.
+    func application(
+        _ application: UIApplication,
+        userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
+    ) {
+        pushLog.debug("userDidAcceptCloudKitShareWith: accepting a Family Favorites share invitation.")
+        Task {
+            await FavoritesSharingService.acceptShare(cloudKitShareMetadata)
+        }
     }
 }
