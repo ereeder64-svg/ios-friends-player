@@ -388,8 +388,18 @@ final class LibraryScanner {
         let filenameTitle = Self.titleFromFilename(item.songURL.lastPathComponent)
         let filenameTrack = Self.trackNumberFromFilename(item.songURL.lastPathComponent)
 
+        // Also re-read for a song that was already fully scanned BEFORE the
+        // genre field existed -- metadataLoaded was already true from that
+        // earlier pass, so without this a song tagged with a real genre
+        // out in the file would stay stuck showing "Unknown Genre" in the
+        // app forever, since the normal metadataLoaded check would skip it
+        // on every future scan. This naturally stops re-triggering once
+        // genre is actually populated; a song that genuinely has no genre
+        // tag keeps re-reading its metadata each scan, which is harmless
+        // and doubles as picking up a genre the moment one gets added to
+        // the file externally.
         let shouldReadMetadata = Self.isLocallyAvailable(url: url)
-            && !(existing?.metadataLoaded ?? false)
+            && (!(existing?.metadataLoaded ?? false) || existing?.genre == nil)
 
         let metadata = shouldReadMetadata ? await readMetadata(at: url) : nil
         let estimatedDuration = metadata == nil ? Self.estimatedDuration(at: url) : 0
