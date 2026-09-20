@@ -34,6 +34,7 @@ private struct SongMetadata: Sendable {
     var trackNumber: Int?
     var duration: Double
     var hasLyrics: Bool
+    var genre: String?
 }
 
 @MainActor
@@ -249,6 +250,7 @@ final class LibraryScanner {
                     winner.trackNumber = loser.trackNumber
                     winner.duration = loser.duration
                     winner.hasLyrics = loser.hasLyrics
+                    winner.genre = loser.genre
                     winner.metadataLoaded = true
                 }
 
@@ -401,6 +403,7 @@ final class LibraryScanner {
                 song.trackNumber = metadata.trackNumber ?? filenameTrack
                 song.duration = metadata.duration
                 song.hasLyrics = metadata.hasLyrics
+                song.genre = metadata.genre
                 song.metadataLoaded = true
             } else if !song.metadataLoaded {
                 song.title = filenameTitle
@@ -418,7 +421,8 @@ final class LibraryScanner {
                 shareName: item.shareName,
                 relativePath: item.relativePath,
                 hasLyrics: metadata?.hasLyrics ?? false,
-                duration: metadata?.duration ?? estimatedDuration
+                duration: metadata?.duration ?? estimatedDuration,
+                genre: metadata?.genre
             )
             song.metadataLoaded = (metadata != nil)
             context.insert(song)
@@ -537,13 +541,15 @@ final class LibraryScanner {
                 let hasLyrics = id3Items.contains { item in
                     item.identifier == .id3MetadataUnsynchronizedLyric
                 }
+                let genre = await stringValue(id3Items, identifier: .id3MetadataContentType)
 
                 return SongMetadata(
                     title: title,
                     album: album,
                     trackNumber: trackNumber,
                     duration: CMTimeGetSeconds(duration),
-                    hasLyrics: hasLyrics
+                    hasLyrics: hasLyrics,
+                    genre: genre
                 )
             } catch {
                 return nil

@@ -42,6 +42,7 @@ struct LibraryTabView: View {
                     case .personas: PersonasListView()
                     case .albums: AllAlbumsView()
                     case .songs: AllSongsView()
+                    case .genres: GenresListView()
                     default: EmptyView()
                     }
                 }
@@ -70,6 +71,9 @@ struct LibraryTabContent: View {
             (persona.albums ?? []).contains { coordinator.connectedShareNames.contains($0.shareName) }
         }
     }
+    private var genreCount: Int {
+        Set(songs.map(Song.genreName)).count
+    }
 
     var body: some View {
         List {
@@ -97,6 +101,9 @@ struct LibraryTabContent: View {
                     }
                     NavigationLink(value: SidebarItem.songs) {
                         Label("Songs (\(songs.count))", systemImage: "music.note")
+                    }
+                    NavigationLink(value: SidebarItem.genres) {
+                        Label("Genres (\(genreCount))", systemImage: "guitars")
                     }
                 }
 

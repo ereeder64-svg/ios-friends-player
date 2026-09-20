@@ -27,6 +27,7 @@ enum SidebarItem: String, Identifiable, CaseIterable, Hashable {
     case personas
     case albums
     case songs
+    case genres
     case playlists
     case favorites
     case downloads
@@ -34,7 +35,7 @@ enum SidebarItem: String, Identifiable, CaseIterable, Hashable {
 
     var id: String { rawValue }
 
-    // On iPhone/portrait's tab bar these four don't get their own tab --
+    // On iPhone/portrait's tab bar these five don't get their own tab --
     // they only exist one level deep, pushed inside the Library tab.
     // Landscape's flat sidebar treats them (and Library itself) as equal
     // top-level items. This is the mapping used to reconcile the two
@@ -42,7 +43,7 @@ enum SidebarItem: String, Identifiable, CaseIterable, Hashable {
     // tab-bar destination (see MainTabView.activeTabBinding) or decide
     // whether Library's own NavigationStack should have something pushed
     // (see LibraryTabView).
-    static let nestedUnderLibraryTab: Set<SidebarItem> = [.search, .personas, .albums, .songs]
+    static let nestedUnderLibraryTab: Set<SidebarItem> = [.search, .personas, .albums, .songs, .genres]
 
     var title: String {
         switch self {
@@ -51,6 +52,7 @@ enum SidebarItem: String, Identifiable, CaseIterable, Hashable {
         case .personas: return "Personas"
         case .albums: return "Albums"
         case .songs: return "Songs"
+        case .genres: return "Genres"
         case .playlists: return "Playlists"
         case .favorites: return "Favorites"
         case .downloads: return "Downloads"
@@ -65,6 +67,7 @@ enum SidebarItem: String, Identifiable, CaseIterable, Hashable {
         case .personas: return "person.2"
         case .albums: return "square.stack"
         case .songs: return "music.note"
+        case .genres: return "guitars"
         case .playlists: return "music.note.list"
         case .favorites: return "heart.fill"
         case .downloads: return "arrow.down.circle"
@@ -241,6 +244,8 @@ struct SidebarNavigationView: View {
             AllAlbumsView()
         case .songs:
             AllSongsView()
+        case .genres:
+            GenresListView()
         case .playlists:
             PlaylistsTabContent()
         case .favorites:

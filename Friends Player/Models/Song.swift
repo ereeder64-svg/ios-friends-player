@@ -26,6 +26,11 @@ final class Song {
     var duration: Double = 0
     var metadataLoaded: Bool = false
     var dateAddedToLibrary: Date = Date()
+    // Read from the MP3's ID3 genre (TCON) tag at scan time -- see
+    // LibraryScanner.readMetadata. nil/blank means the file just isn't
+    // tagged; GenresListView folds those into an "Unknown Genre" bucket
+    // rather than hiding them, so untagged songs stay easy to find.
+    var genre: String?
 
     var isFavorite: Bool = false
     var hasBeenPlayed: Bool = false
@@ -79,7 +84,8 @@ final class Song {
         shareName: String,
         relativePath: String,
         hasLyrics: Bool = false,
-        duration: Double = 0
+        duration: Double = 0,
+        genre: String? = nil
     ) {
         self.stableID = stableID
         self.title = title
@@ -89,6 +95,7 @@ final class Song {
         self.relativePath = relativePath
         self.hasLyrics = hasLyrics
         self.duration = duration
+        self.genre = genre
         self.metadataLoaded = false
         self.dateAddedToLibrary = Date()
 
@@ -112,5 +119,15 @@ final class Song {
         }
         let trimmed = String(chars.dropFirst(3))
         return trimmed.isEmpty ? title : trimmed
+    }
+
+    /// Genre bucket name for grouping (GenresListView, and the "Genres
+    /// (N)" count in Library's Browse section). Blank/missing genre folds
+    /// into a single "Unknown Genre" bucket instead of being dropped, so
+    /// songs that still need a genre tag stay visible rather than
+    /// disappearing from the Genres list entirely.
+    static func genreName(for song: Song) -> String {
+        let trimmed = song.genre?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "Unknown Genre" : trimmed
     }
 }
