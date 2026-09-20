@@ -6,7 +6,7 @@
 import Foundation
 
 enum AppGroupConstants {
-    static let identifier = "group.com.luxrecta.Family-Player"
+    static let identifier = "group.com.luxrecta.Friends-Player"
 
     /// Custom URL scheme used for widget tap-throughs (e.g. recent-album
     /// thumbnails). Requires a matching URL Type added to the main app
@@ -23,9 +23,9 @@ enum AppGroupConstants {
     }
 
     enum Darwin {
-        static let playPause = "com.luxrecta.familyplayer.widget.playPause"
-        static let next = "com.luxrecta.familyplayer.widget.next"
-        static let previous = "com.luxrecta.familyplayer.widget.previous"
+        static let playPause = "com.luxrecta.friendsplayer.widget.playPause"
+        static let next = "com.luxrecta.friendsplayer.widget.next"
+        static let previous = "com.luxrecta.friendsplayer.widget.previous"
     }
 
     static func sharedDefaults() -> UserDefaults? {

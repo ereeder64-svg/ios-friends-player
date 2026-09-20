@@ -6,7 +6,7 @@
 import Foundation
 import OSLog
 
-private let widgetLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "RecentAlbumsSnapshot")
+private let widgetLog = Logger(subsystem: "com.luxrecta.Friends-Player", category: "RecentAlbumsSnapshot")
 
 struct RecentAlbumEntry: Codable, Sendable, Equatable, Identifiable {
     var id: String        // Album.stableID

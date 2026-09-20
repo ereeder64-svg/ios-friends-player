@@ -10,7 +10,7 @@ import SwiftData
 import CoreData
 import OSLog
 
-private let cloudKitSyncLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "CloudKitSync")
+private let cloudKitSyncLog = Logger(subsystem: "com.luxrecta.Friends-Player", category: "CloudKitSync")
 
 @main
 struct Family_PlayerApp: App {
@@ -22,7 +22,7 @@ struct Family_PlayerApp: App {
     // Private CloudKit database sync -- each user's own iCloud account,
     // across their own devices only (not shared between family members).
     // Uses the container declared in the entitlements file
-    // (iCloud.com.luxrecta.Family-Player).
+    // (iCloud.com.luxrecta.Friends-Player).
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Persona.self,
@@ -91,7 +91,7 @@ struct Family_PlayerApp: App {
     // Logs every CloudKit import/export the whole app session goes through
     // (not just the one-time initial-import wait in RootView), so "is it
     // actually syncing?" is answerable by watching the Xcode console --
-    // filter by subsystem "com.luxrecta.Family-Player" / category
+    // filter by subsystem "com.luxrecta.Friends-Player" / category
     // "CloudKitSync" -- instead of just inferring it from the UI.
     private static func observeCloudKitSyncEvents() {
         NotificationCenter.default.addObserver(

@@ -7,7 +7,7 @@ import UIKit
 import CloudKit
 import OSLog
 
-private let pushLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "RemotePush")
+private let pushLog = Logger(subsystem: "com.luxrecta.Friends-Player", category: "RemotePush")
 
 // NSPersistentCloudKitContainer (the engine SwiftData uses under the hood
 // when cloudKitDatabase: .automatic) creates its own CloudKit subscriptions

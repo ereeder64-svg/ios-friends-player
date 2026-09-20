@@ -6,7 +6,7 @@
 import Foundation
 import OSLog
 
-private let widgetLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "NowPlayingSnapshot")
+private let widgetLog = Logger(subsystem: "com.luxrecta.Friends-Player", category: "NowPlayingSnapshot")
 
 struct NowPlayingSnapshot: Codable, Sendable, Equatable {
     var hasSong: Bool

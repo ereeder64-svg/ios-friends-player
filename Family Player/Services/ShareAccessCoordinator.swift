@@ -11,13 +11,7 @@ import Observation
 final class ShareAccessCoordinator {
 
     static let expectedShares: [String] = [
-        "Public Share",
-        "Family Share",
-        "Legacy Share",
-        "Amanda",
-        "Chris",
-        "Emily",
-        "Michele"
+        "Friends"
     ]
 
     private(set) var resolvedURLs: [String: URL] = [:]

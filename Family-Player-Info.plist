@@ -10,7 +10,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string> com.luxrecta.Family-Player</string>
+			<string> com.luxrecta.Friends-Player</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>familyplayer</string>

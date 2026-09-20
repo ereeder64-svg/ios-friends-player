@@ -8,8 +8,8 @@ import SwiftData
 import CoreData
 import OSLog
 
-private let deepLinkLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "DeepLink")
-nonisolated(unsafe) private let cloudKitSyncLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "CloudKitSync")
+private let deepLinkLog = Logger(subsystem: "com.luxrecta.Friends-Player", category: "DeepLink")
+nonisolated(unsafe) private let cloudKitSyncLog = Logger(subsystem: "com.luxrecta.Friends-Player", category: "CloudKitSync")
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext

@@ -12,7 +12,7 @@ import WidgetKit
 struct FamilyPlayerWidgetControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(
-            kind: "com.luxrecta.Family-Player.FamilyPlayerWidget",
+            kind: "com.luxrecta.Friends-Player.FamilyPlayerWidget",
             provider: Provider()
         ) { value in
             ControlWidgetToggle(

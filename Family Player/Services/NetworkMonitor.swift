@@ -27,6 +27,6 @@ final class NetworkMonitor {
                 self?.isOnWiFi = onWiFi
             }
         }
-        monitor.start(queue: DispatchQueue(label: "com.luxrecta.Family-Player.NetworkMonitor"))
+        monitor.start(queue: DispatchQueue(label: "com.luxrecta.Friends-Player.NetworkMonitor"))
     }
 }

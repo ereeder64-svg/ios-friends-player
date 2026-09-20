@@ -9,7 +9,7 @@ import SwiftData
 import Observation
 import OSLog
 
-private let favoritesSharingLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "FavoritesSharing")
+private let favoritesSharingLog = Logger(subsystem: "com.luxrecta.Friends-Player", category: "FavoritesSharing")
 
 extension Notification.Name {
     static let familyFavoritesShareAccepted = Notification.Name("familyFavoritesShareAccepted")
@@ -54,7 +54,7 @@ final class FavoritesSharingService {
     private static let recordType = "FavoriteSong"
     private static let zoneName = "FamilyFavoritesZone"
 
-    private let container = CKContainer(identifier: "iCloud.com.luxrecta.Family-Player")
+    private let container = CKContainer(identifier: "iCloud.com.luxrecta.Friends-Player")
     private var zoneID: CKRecordZone.ID {
         CKRecordZone.ID(zoneName: Self.zoneName, ownerName: CKCurrentUserDefaultName)
     }
@@ -264,7 +264,7 @@ final class FavoritesSharingService {
 
     static func acceptShare(_ metadata: CKShare.Metadata) async {
         do {
-            let container = CKContainer(identifier: "iCloud.com.luxrecta.Family-Player")
+            let container = CKContainer(identifier: "iCloud.com.luxrecta.Friends-Player")
             _ = try await container.accept(metadata)
             NotificationCenter.default.post(name: .familyFavoritesShareAccepted, object: nil)
         } catch {

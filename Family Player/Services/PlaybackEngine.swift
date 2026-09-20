@@ -12,7 +12,7 @@ import UIKit
 import WidgetKit
 import OSLog
 
-private let widgetLog = Logger(subsystem: "com.luxrecta.Family-Player", category: "PlaybackEngine")
+private let widgetLog = Logger(subsystem: "com.luxrecta.Friends-Player", category: "PlaybackEngine")
 
 @MainActor
 @Observable

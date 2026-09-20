@@ -419,7 +419,7 @@
 				DEVELOPMENT_TEAM = J4KWXV82LA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FamilyPlayerWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = FamilyPlayerWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = FriendsPlayerWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -427,7 +427,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Family-Player.FamilyPlayerWidget";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player.FamilyPlayerWidget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -450,7 +450,7 @@
 				DEVELOPMENT_TEAM = J4KWXV82LA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FamilyPlayerWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = FamilyPlayerWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = FriendsPlayerWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -458,7 +458,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Family-Player.FamilyPlayerWidget";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player.FamilyPlayerWidget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -603,6 +603,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Family-Player-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Friends Player";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -613,7 +614,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Family-Player";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -639,6 +640,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Family-Player-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Friends Player";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -649,7 +651,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.5;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Family-Player";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -671,7 +673,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "luxrecta.Family-PlayerTests";
+				PRODUCT_BUNDLE_IDENTIFIER = "luxrecta.Friends-PlayerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -693,7 +695,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "luxrecta.Family-PlayerTests";
+				PRODUCT_BUNDLE_IDENTIFIER = "luxrecta.Friends-PlayerTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -713,7 +715,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "luxrecta.Family-PlayerUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = "luxrecta.Friends-PlayerUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -733,7 +735,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "luxrecta.Family-PlayerUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = "luxrecta.Friends-PlayerUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
