@@ -127,7 +127,8 @@ final class Song {
     /// songs that still need a genre tag stay visible rather than
     /// disappearing from the Genres list entirely.
     static func genreName(for song: Song) -> String {
-        let trimmed = song.genre?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? "Unknown Genre" : trimmed
+        // normalizedGenre also cleans numeric values ("(17)") already stored
+        // by earlier scans, so they display correctly without a rescan.
+        normalizedGenre(song.genre) ?? "Unknown Genre"
     }
 }

@@ -250,8 +250,10 @@ final class LibraryScanner {
                     winner.trackNumber = loser.trackNumber
                     winner.duration = loser.duration
                     winner.hasLyrics = loser.hasLyrics
-                    winner.genre = loser.genre
                     winner.metadataLoaded = true
+                }
+                if (winner.genre ?? "").isEmpty, let loserGenre = loser.genre, !loserGenre.isEmpty {
+                    winner.genre = loserGenre
                 }
 
                 // Re-point playlist membership instead of losing it, but
@@ -413,7 +415,12 @@ final class LibraryScanner {
                 song.trackNumber = metadata.trackNumber ?? filenameTrack
                 song.duration = metadata.duration
                 song.hasLyrics = metadata.hasLyrics
-                song.genre = metadata.genre
+                // Only adopt a non-blank genre: a device whose copy of the
+                // file is untagged/unreadable must not wipe a genre that
+                // was read on another device and synced in.
+                if let genre = normalizedGenre(metadata.genre) {
+                    song.genre = genre
+                }
                 song.metadataLoaded = true
             } else if !song.metadataLoaded {
                 song.title = filenameTitle
@@ -432,7 +439,7 @@ final class LibraryScanner {
                 relativePath: item.relativePath,
                 hasLyrics: metadata?.hasLyrics ?? false,
                 duration: metadata?.duration ?? estimatedDuration,
-                genre: metadata?.genre
+                genre: normalizedGenre(metadata?.genre)
             )
             song.metadataLoaded = (metadata != nil)
             context.insert(song)
@@ -551,7 +558,23 @@ final class LibraryScanner {
                 let hasLyrics = id3Items.contains { item in
                     item.identifier == .id3MetadataUnsynchronizedLyric
                 }
-                let genre = await stringValue(id3Items, identifier: .id3MetadataContentType)
+                // ID3v2 TCON first, then fall back to any other tag format on
+                // the file (common "type" key, iTunes genre, ID3v1) so files
+                // without an ID3v2 genre frame aren't left as Unknown Genre.
+                var genre = normalizedGenre(await stringValue(id3Items, identifier: .id3MetadataContentType))
+                if genre == nil {
+                    genre = normalizedGenre(await stringValue(commonItems, key: .commonKeyType))
+                }
+                if genre == nil, let allItems = try? await asset.load(.metadata) {
+                    for identifier in [AVMetadataIdentifier.id3MetadataContentType,
+                                       .iTunesMetadataUserGenre,
+                                       .iTunesMetadataPredefinedGenre] {
+                        if let found = normalizedGenre(await stringValue(allItems, identifier: identifier)) {
+                            genre = found
+                            break
+                        }
+                    }
+                }
 
                 return SongMetadata(
                     title: title,
@@ -766,4 +789,159 @@ private func stringValue(_ items: [AVMetadataItem], identifier: AVMetadataIdenti
     let filtered = AVMetadataItem.metadataItems(from: items, filteredByIdentifier: identifier)
     guard let first = filtered.first else { return nil }
     return try? await first.load(.stringValue)
+}
+
+// MARK: - Genre normalization
+
+/// ID3v1 genre table. ID3v2 TCON frames often store the genre as a numeric
+/// reference -- "17", "(17)", or "(17)Rock" -- instead of the name, which
+/// used to show up in the Genres list as literal "17" / "(17)" buckets.
+private let id3v1Genres: [String] = [
+        "Blues",
+        "Classic Rock",
+        "Country",
+        "Dance",
+        "Disco",
+        "Funk",
+        "Grunge",
+        "Hip-Hop",
+        "Jazz",
+        "Metal",
+        "New Age",
+        "Oldies",
+        "Other",
+        "Pop",
+        "R&B",
+        "Rap",
+        "Reggae",
+        "Rock",
+        "Techno",
+        "Industrial",
+        "Alternative",
+        "Ska",
+        "Death Metal",
+        "Pranks",
+        "Soundtrack",
+        "Euro-Techno",
+        "Ambient",
+        "Trip-Hop",
+        "Vocal",
+        "Jazz+Funk",
+        "Fusion",
+        "Trance",
+        "Classical",
+        "Instrumental",
+        "Acid",
+        "House",
+        "Game",
+        "Sound Clip",
+        "Gospel",
+        "Noise",
+        "Alternative Rock",
+        "Bass",
+        "Soul",
+        "Punk",
+        "Space",
+        "Meditative",
+        "Instrumental Pop",
+        "Instrumental Rock",
+        "Ethnic",
+        "Gothic",
+        "Darkwave",
+        "Techno-Industrial",
+        "Electronic",
+        "Pop-Folk",
+        "Eurodance",
+        "Dream",
+        "Southern Rock",
+        "Comedy",
+        "Cult",
+        "Gangsta",
+        "Top 40",
+        "Christian Rap",
+        "Pop/Funk",
+        "Jungle",
+        "Native American",
+        "Cabaret",
+        "New Wave",
+        "Psychedelic",
+        "Rave",
+        "Showtunes",
+        "Trailer",
+        "Lo-Fi",
+        "Tribal",
+        "Acid Punk",
+        "Acid Jazz",
+        "Polka",
+        "Retro",
+        "Musical",
+        "Rock & Roll",
+        "Hard Rock",
+        "Folk",
+        "Folk-Rock",
+        "National Folk",
+        "Swing",
+        "Fast Fusion",
+        "Bebop",
+        "Latin",
+        "Revival",
+        "Celtic",
+        "Bluegrass",
+        "Avantgarde",
+        "Gothic Rock",
+        "Progressive Rock",
+        "Psychedelic Rock",
+        "Symphonic Rock",
+        "Slow Rock",
+        "Big Band",
+        "Chorus",
+        "Easy Listening",
+        "Acoustic",
+        "Humour",
+        "Speech",
+        "Chanson",
+        "Opera",
+        "Chamber Music",
+        "Sonata",
+        "Symphony",
+        "Booty Bass",
+        "Primus",
+        "Porn Groove",
+        "Satire",
+        "Slow Jam",
+        "Club",
+        "Tango",
+        "Samba",
+        "Folklore",
+        "Ballad",
+        "Power Ballad",
+        "Rhythmic Soul",
+        "Freestyle",
+        "Duet",
+        "Punk Rock",
+        "Drum Solo",
+        "A Cappella",
+        "Euro-House",
+        "Dance Hall"
+]
+
+/// Turns a raw genre tag into a display name: resolves numeric ID3v1
+/// references to names, strips a "(N)" prefix when a name follows, and
+/// returns nil for blank values so callers treat them as untagged.
+func normalizedGenre(_ raw: String?) -> String? {
+    var text = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    if text.isEmpty { return nil }
+    if text.hasPrefix("("), let close = text.firstIndex(of: ")") {
+        let code = String(text[text.index(after: text.startIndex)..<close])
+        let rest = text[text.index(after: close)...].trimmingCharacters(in: .whitespacesAndNewlines)
+        if !rest.isEmpty { text = rest } else { text = code }
+    }
+    if let index = Int(text) {
+        return id3v1Genres.indices.contains(index) ? id3v1Genres[index] : nil
+    }
+    switch text.uppercased() {
+    case "RX": return "Remix"
+    case "CR": return "Cover"
+    default: return text
+    }
 }
