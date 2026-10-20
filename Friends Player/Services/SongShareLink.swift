@@ -66,17 +66,21 @@ enum SongShareLink {
         return set
     }()
 
+    // Spaces are written as "+" (a literal "+" is escaped as %2B) -- much
+    // shorter and more readable in a text message than "%20".
     private static func encode(_ value: String) -> String {
-        value.addingPercentEncoding(withAllowedCharacters: valueAllowed) ?? ""
+        (value.addingPercentEncoding(withAllowedCharacters: valueAllowed) ?? "")
+            .replacingOccurrences(of: "%20", with: "+")
+    }
+
+    private static func decode(_ value: String) -> String {
+        value.replacingOccurrences(of: "+", with: " ").removingPercentEncoding ?? value
     }
 
     // MARK: - Sending
 
     static func url(for song: Song, sender: String, target: Target) -> URL? {
         var items = [URLQueryItem(name: "t", value: encode(song.displayTitle))]
-        if let album = song.album?.title, !album.isEmpty {
-            items.append(URLQueryItem(name: "a", value: encode(album)))
-        }
         if let persona = song.album?.persona?.name, !persona.isEmpty {
             items.append(URLQueryItem(name: "p", value: encode(persona)))
         }
@@ -100,15 +104,22 @@ enum SongShareLink {
             : "\(sender) sent you \"\(song.displayTitle)\"\(byline)."
     }
 
+    /// What goes in the Messages compose box: the intro line, then the link.
+    static func message(for song: Song, sender: String, target: Target) -> String {
+        let intro = intro(for: song, sender: sender)
+        guard let url = url(for: song, sender: sender, target: target) else { return intro }
+        return "\(intro) Tap to play it in \(target.appName):\n\(url.absoluteString)"
+    }
+
     // MARK: - Receiving
 
     static func payload(from url: URL) -> Payload? {
-        guard let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
-              let title = items.first(where: { $0.name == "t" })?.value,
-              !title.isEmpty else { return nil }
+        guard let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedQueryItems else { return nil }
         func value(_ name: String) -> String {
-            items.first(where: { $0.name == name })?.value ?? ""
+            items.first(where: { $0.name == name })?.value.map(decode) ?? ""
         }
+        let title = value("t")
+        guard !title.isEmpty else { return nil }
         return Payload(title: title, album: value("a"), persona: value("p"), sender: value("from"))
     }
 

@@ -207,10 +207,12 @@ struct RootView: View {
         }
         // "Song sent to you" links carry a title ("t") instead of an album id.
         if let payload = SongShareLink.payload(from: url) {
+            deepLinkLog.debug("handleDeepLink: shared song '\(payload.title, privacy: .public)' from '\(payload.sender, privacy: .public)' (ready=\(isReadyForSharedSong), setup=\(hasCompletedSetup)).")
             pendingSharedSong = payload
             playPendingSharedSongIfReady()
             return
         }
+        deepLinkLog.debug("handleDeepLink: no shared-song payload in \(url.absoluteString, privacy: .public).")
         guard let idString = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?.first(where: { $0.name == "id" })?.value else {
             deepLinkLog.error("handleDeepLink: no 'id' query item in \(url.absoluteString, privacy: .public).")
@@ -239,7 +241,18 @@ struct RootView: View {
         let albumSongs = (song.album?.songs ?? [])
             .filter { connected.contains($0.shareName) }
             .sortedByAlbumThenTitle()
+        deepLinkLog.debug("playPendingSharedSongIfReady: playing '\(song.title, privacy: .public)' (\(albumSongs.count) in album).")
         Task { await engine.play(song: song, in: albumSongs.isEmpty ? [song] : albumSongs) }
+
+        // Take the recipient to the song: dismiss anything already
+        // presented (a second sheet can't stack -- see presentAlbum) and
+        // open the full player.
+        let hadOpenPresentation = deepLinkAlbum != nil
+        deepLinkAlbum = nil
+        Task { @MainActor in
+            if hadOpenPresentation { try? await Task.sleep(nanoseconds: 300_000_000) }
+            engine.isShowingNowPlayingSheet = true
+        }
     }
 
     private func presentAlbum(withID idString: String) {
