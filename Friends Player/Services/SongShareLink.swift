@@ -36,6 +36,16 @@ enum SongShareLink {
             case .friendsPlayer: return "Friends Player"
             }
         }
+
+        /// Image-set name of this app's icon, shown in the share preview.
+        /// Both apps carry both images (the sender's app has no access to
+        /// the other app's asset catalog).
+        var iconAssetName: String {
+            switch self {
+            case .familyPlayer: return "ShareIcon-FamilyPlayer"
+            case .friendsPlayer: return "ShareIcon-FriendsPlayer"
+            }
+        }
     }
 
     struct Payload: Equatable {
@@ -81,16 +91,13 @@ enum SongShareLink {
         return components.url
     }
 
-    /// The text dropped into the Messages compose box: a human-readable
-    /// line plus the link itself on its own line.
-    static func message(for song: Song, sender: String, target: Target) -> String {
+    /// The line of text that accompanies the link ("Eric sent you ...").
+    static func intro(for song: Song, sender: String) -> String {
         let personaName = song.album?.persona?.name ?? ""
         let byline = personaName.isEmpty ? "" : " by \(personaName)"
-        let intro = sender.isEmpty
+        return sender.isEmpty
             ? "Check out \"\(song.displayTitle)\"\(byline)."
             : "\(sender) sent you \"\(song.displayTitle)\"\(byline)."
-        guard let url = url(for: song, sender: sender, target: target) else { return intro }
-        return "\(intro) Tap to play it in \(target.appName):\n\(url.absoluteString)"
     }
 
     // MARK: - Receiving
