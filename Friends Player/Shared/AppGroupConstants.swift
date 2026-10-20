@@ -11,7 +11,7 @@ enum AppGroupConstants {
     /// Custom URL scheme used for widget tap-throughs (e.g. recent-album
     /// thumbnails). Requires a matching URL Type added to the main app
     /// target's Info settings in Xcode (Target > Info > URL Types).
-    static let urlScheme = "familyplayer"
+    static let urlScheme = "friendsplayer"
 
     /// Number of recent-album thumbnails shown on the medium widget.
     static let recentAlbumSlotCount = 4

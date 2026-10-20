@@ -10,6 +10,6 @@ import Foundation
 // effectively access tokens — keep the GitHub repository private.
 enum ShareInvitations {
     static let urls: [String: String] = [
-        "Friends": "https://www.icloud.com/iclouddrive/085J73J7FUnjrTsYbjdOa8YOg#Friends_Share",
+        "Friends Share": "https://www.icloud.com/iclouddrive/085J73J7FUnjrTsYbjdOa8YOg#Friends_Share",
     ]
 }

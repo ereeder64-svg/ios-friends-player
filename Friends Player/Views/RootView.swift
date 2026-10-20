@@ -23,6 +23,12 @@ struct RootView: View {
     @State private var didResolve = false
     @State private var didKickOffInitialScan = false
     @State private var deepLinkAlbum: Album?
+    // A "song sent to you" link can arrive before this view has finished
+    // wiring the engine to the share coordinator (cold launch straight from
+    // a link), so it waits here until isReadyForSharedSong flips.
+    @State private var pendingSharedSong: SongShareLink.Payload?
+    @State private var isReadyForSharedSong = false
+    @State private var sharedSongNotFound: SongShareLink.Payload?
 
     var body: some View {
         Group {
@@ -38,8 +44,12 @@ struct RootView: View {
                         engine.modelContext = modelContext
                         downloads.coordinator = coordinator
                         downloads.modelContext = modelContext
+                        ShareRenameMigration.migrateFiles()
+                        ShareRenameMigration.migrateLibrary(in: modelContext)
                         downloads.refreshDownloadedStableIDs()
                         scanner.downloadManager = downloads
+                        isReadyForSharedSong = true
+                        playPendingSharedSongIfReady()
                         if !didKickOffInitialScan {
                             didKickOffInitialScan = true
                             await waitForInitialCloudKitImportIfNeeded(context: modelContext)
@@ -77,6 +87,19 @@ struct RootView: View {
         .onOpenURL { url in
             deepLinkLog.debug("onOpenURL received: \(url.absoluteString, privacy: .public)")
             handleDeepLink(url)
+        }
+        .alert(
+            "Song Not in Your Library",
+            isPresented: Binding(
+                get: { sharedSongNotFound != nil },
+                set: { if !$0 { sharedSongNotFound = nil } }
+            ),
+            presenting: sharedSongNotFound
+        ) { _ in
+            Button("OK", role: .cancel) { }
+        } message: { payload in
+            let from = payload.sender.isEmpty ? "Someone" : payload.sender
+            Text("\(from) sent you \"\(payload.title)\", but it isn't in this app's library.")
         }
         .onChange(of: NetworkMonitor.shared.isOnWiFi) { _, isOnWiFi in
             // Scanning/downloading only runs on Wi-Fi (see LibraryScanner.scan
@@ -172,7 +195,7 @@ struct RootView: View {
     }
 
     // Widget recent-album thumbnails link back via
-    // familyplayer://album?id=<shareName>|<relativePath> (Album.stableID).
+    // friendsplayer://album?id=<shareName>|<relativePath> (Album.stableID).
     //
     // Deliberately not checking url.host here: Foundation's URL parser
     // doesn't reliably populate .host for custom (non-http/https) schemes,
@@ -182,12 +205,41 @@ struct RootView: View {
             deepLinkLog.error("handleDeepLink: scheme mismatch — got \(url.scheme ?? "nil", privacy: .public).")
             return
         }
+        // "Song sent to you" links carry a title ("t") instead of an album id.
+        if let payload = SongShareLink.payload(from: url) {
+            pendingSharedSong = payload
+            playPendingSharedSongIfReady()
+            return
+        }
         guard let idString = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?.first(where: { $0.name == "id" })?.value else {
             deepLinkLog.error("handleDeepLink: no 'id' query item in \(url.absoluteString, privacy: .public).")
             return
         }
         presentAlbum(withID: idString)
+    }
+
+    // Finds the sent song in THIS app's library by content (title/album/
+    // artist -- see SongShareLink) and starts it, queued with the rest of
+    // its album. Does nothing until setup has finished and the engine is
+    // wired up; the .task above calls this again once it is.
+    private func playPendingSharedSongIfReady() {
+        guard let payload = pendingSharedSong, hasCompletedSetup, isReadyForSharedSong else { return }
+        pendingSharedSong = nil
+
+        let connected = coordinator.connectedShareNames
+        let songs = ((try? modelContext.fetch(FetchDescriptor<Song>())) ?? [])
+            .filter { connected.contains($0.shareName) }
+        guard let song = SongShareLink.findSong(matching: payload, in: songs) else {
+            deepLinkLog.error("playPendingSharedSongIfReady: no library match for '\(payload.title, privacy: .public)'.")
+            sharedSongNotFound = payload
+            return
+        }
+
+        let albumSongs = (song.album?.songs ?? [])
+            .filter { connected.contains($0.shareName) }
+            .sortedByAlbumThenTitle()
+        Task { await engine.play(song: song, in: albumSongs.isEmpty ? [song] : albumSongs) }
     }
 
     private func presentAlbum(withID idString: String) {

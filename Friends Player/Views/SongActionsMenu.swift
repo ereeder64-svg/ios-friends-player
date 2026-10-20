@@ -41,6 +41,12 @@ struct SongActionsMenu: View {
 
             FavoriteMenuButton(song: song)
 
+            Menu {
+                SendSongLinks(song: song)
+            } label: {
+                Label("Send Song", systemImage: "paperplane")
+            }
+
             Button {
                 showLyrics = true
             } label: {

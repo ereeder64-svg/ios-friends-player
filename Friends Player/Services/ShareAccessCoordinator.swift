@@ -11,7 +11,7 @@ import Observation
 final class ShareAccessCoordinator {
 
     static let expectedShares: [String] = [
-        "Friends"
+        "Friends Share"
     ]
 
     private(set) var resolvedURLs: [String: URL] = [:]
@@ -37,6 +37,7 @@ final class ShareAccessCoordinator {
 
     @discardableResult
     func resolveAll() -> [String: URL] {
+        ShareRenameMigration.migrateBookmarks(in: context)
         resolvedURLs.removeAll()
         staleShares.removeAll()
 

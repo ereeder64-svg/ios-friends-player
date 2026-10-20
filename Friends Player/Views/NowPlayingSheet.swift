@@ -37,6 +37,16 @@ struct NowPlayingSheet: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(engine.currentSong == nil)
+                Menu {
+                    if let song = engine.currentSong {
+                        SendSongLinks(song: song)
+                    }
+                } label: {
+                    Image(systemName: "paperplane")
+                        .font(.title3)
+                        .foregroundStyle(.primary)
+                }
+                .disabled(engine.currentSong == nil)
                 Button {
                     if let song = engine.currentSong {
                         song.isFavorite.toggle()
