@@ -107,6 +107,18 @@ enum SongShareLink {
         return components.url
     }
 
+    /// The same link with only its query ("?t=…&p=…") -- what an iMessage
+    /// bubble carries. Messages drops a bubble's URL entirely when it uses
+    /// a custom scheme like familyplayer://, so the recipient's Messages
+    /// extension rebuilds the app link from this query instead.
+    static func bubbleURL(for song: Song, sender: String) -> URL? {
+        guard let appURL = url(for: song, sender: sender, target: .current),
+              var components = URLComponents(url: appURL, resolvingAgainstBaseURL: false) else { return nil }
+        components.scheme = nil
+        components.host = nil
+        return components.url
+    }
+
     /// The line of text that accompanies the link ("Eric sent you ...").
     static func intro(for song: Song, sender: String) -> String {
         let personaName = song.album?.persona?.name ?? ""

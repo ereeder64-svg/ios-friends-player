@@ -24,7 +24,7 @@ final class SongMessageComposer: NSObject, MFMessageComposeViewControllerDelegat
 
     func present(song: Song, sender: String) {
         let target = SongShareLink.Target.current
-        guard let url = SongShareLink.url(for: song, sender: sender, target: target) else { return }
+        guard let url = SongShareLink.bubbleURL(for: song, sender: sender) else { return }
 
         let layout = MSMessageTemplateLayout()
         layout.image = UIImage(named: target.iconAssetName)
