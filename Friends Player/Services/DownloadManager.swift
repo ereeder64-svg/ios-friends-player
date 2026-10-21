@@ -92,17 +92,34 @@ final class DownloadManager {
 
     // MARK: - Bulk
 
+    // Several things ask for a download pass (opening the app, Wi-Fi coming
+    // back, a scan finishing) and they often overlap. Only one pass runs at
+    // a time; a request that arrives mid-pass is remembered and triggers one
+    // more pass at the end, so songs a just-finished scan added aren't
+    // missed by a pass that fetched the song list before they existed.
+    private var isDownloadingAll = false
+    private var rerunRequested = false
+
     /// Downloads every not-yet-downloaded song in the library, one at a
     /// time, stopping as soon as Wi-Fi is no longer available (re-running
-    /// this later, e.g. after the next scan, picks up wherever it left off
-    /// since it only ever looks at what's still missing).
+    /// this later picks up wherever it left off since it only ever looks
+    /// at what's still missing).
     func downloadAllMissing() async {
-        guard let modelContext,
-              let allSongs = try? modelContext.fetch(FetchDescriptor<Song>()) else { return }
-        for song in allSongs where song.downloadCachePath == nil {
-            guard NetworkMonitor.shared.isOnWiFi else { return }
-            await download(song: song)
+        guard !isDownloadingAll else {
+            rerunRequested = true
+            return
         }
+        isDownloadingAll = true
+        defer { isDownloadingAll = false }
+        repeat {
+            rerunRequested = false
+            guard let modelContext,
+                  let allSongs = try? modelContext.fetch(FetchDescriptor<Song>()) else { return }
+            for song in allSongs where song.downloadCachePath == nil {
+                guard NetworkMonitor.shared.isOnWiFi else { return }
+                await download(song: song)
+            }
+        } while rerunRequested
     }
 
     func download(songs: [Song]) async {

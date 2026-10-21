@@ -23,6 +23,12 @@ enum SongShareLink {
 
         var id: Self { self }
 
+        /// The app this code is running in (this file is shared verbatim
+        /// between Family Player and Friends Player).
+        static var current: Target {
+            Bundle.main.bundleIdentifier?.contains("Friends-Player") == true ? .friendsPlayer : .familyPlayer
+        }
+
         var scheme: String {
             switch self {
             case .familyPlayer: return "familyplayer"
@@ -116,7 +122,7 @@ enum SongShareLink {
     static func payload(from url: URL) -> Payload? {
         guard let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedQueryItems else { return nil }
         func value(_ name: String) -> String {
-            items.first(where: { $0.name == name })?.value.map(decode) ?? ""
+            items.first(where: { $0.name == name })?.value.map { decode($0) } ?? ""
         }
         let title = value("t")
         guard !title.isEmpty else { return nil }

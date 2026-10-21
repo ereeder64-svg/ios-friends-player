@@ -50,6 +50,7 @@ struct RootView: View {
                         scanner.downloadManager = downloads
                         isReadyForSharedSong = true
                         playPendingSharedSongIfReady()
+                        autoDownloadIfOnWiFi()
                         if !didKickOffInitialScan {
                             didKickOffInitialScan = true
                             await waitForInitialCloudKitImportIfNeeded(context: modelContext)
@@ -102,13 +103,14 @@ struct RootView: View {
             Text("\(from) sent you \"\(payload.title)\", but it isn't in this app's library.")
         }
         .onChange(of: NetworkMonitor.shared.isOnWiFi) { _, isOnWiFi in
-            // Scanning/downloading only runs on Wi-Fi (see LibraryScanner.scan
-            // and DownloadManager.downloadAllMissing); a launch or refresh
-            // attempted on cellular just bails out with progress.lastError
-            // set, rather than retrying on its own. Re-kick the scan as soon
-            // as Wi-Fi actually becomes available so that dead end resolves
-            // itself instead of requiring a manual "Refresh Library" tap.
-            guard isOnWiFi, hasCompletedSetup, !scanner.progress.isScanning else { return }
+            // Scanning/downloading only runs on Wi-Fi. When Wi-Fi becomes
+            // available -- including a moment after launch, since the
+            // network monitor only reports its first reading asynchronously
+            // -- start downloading right away and re-kick the scan, rather
+            // than waiting for a manual "Refresh Library" tap.
+            guard isOnWiFi, hasCompletedSetup else { return }
+            autoDownloadIfOnWiFi()
+            guard !scanner.progress.isScanning else { return }
             Task { await scanner.scan(coordinator: coordinator, context: modelContext) }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -119,8 +121,18 @@ struct RootView: View {
             // turned out not to be reliably firing from widget taps at all.
             if newPhase == .active {
                 checkPendingAlbumDeepLink()
+                autoDownloadIfOnWiFi()
             }
         }
+    }
+
+    // Every time the app opens (launch or back to the foreground) on Wi-Fi,
+    // download whatever songs aren't on this device yet. Doesn't wait for
+    // a library scan; the scan still triggers another pass when it
+    // finishes, to pick up songs it newly found.
+    private func autoDownloadIfOnWiFi() {
+        guard hasCompletedSetup, NetworkMonitor.shared.isOnWiFi, downloads.modelContext != nil else { return }
+        Task { await downloads.downloadAllMissing() }
     }
 
     // On a brand-new device/install, the local SwiftData store starts

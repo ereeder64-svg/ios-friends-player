@@ -10,6 +10,7 @@
 		21AECC952FEDFC6F0082ABFC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21AECC942FEDFC6F0082ABFC /* WidgetKit.framework */; };
 		21AECC972FEDFC6F0082ABFC /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 21AECC962FEDFC6F0082ABFC /* SwiftUI.framework */; };
 		21AECCA62FEDFC710082ABFC /* FriendsPlayerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 21AECC922FEDFC6F0082ABFC /* FriendsPlayerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		73EF8E084A756F4C175E0622 /* FriendsPlayerMessagesExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3EB4601CB50CF8A111F29D16 /* FriendsPlayerMessagesExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +35,13 @@
 			remoteGlobalIDString = 21F4B4572FE176D200D79A59;
 			remoteInfo = "Friends Player";
 		};
+		102B5C0E319C58B7E84DD470 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 21F4B4502FE176D200D79A59 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 16FC749809ABB4DAAF992E0D;
+			remoteInfo = FriendsPlayerMessagesExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -44,6 +52,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				21AECCA62FEDFC710082ABFC /* FriendsPlayerWidgetExtension.appex in Embed Foundation Extensions */,
+				73EF8E084A756F4C175E0622 /* FriendsPlayerMessagesExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -58,6 +67,7 @@
 		21F4B4582FE176D200D79A59 /* Friends Player.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Friends Player.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		21F4B4672FE176D300D79A59 /* Friends PlayerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Friends PlayerTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		21F4B4712FE176D300D79A59 /* Friends PlayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Friends PlayerUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3EB4601CB50CF8A111F29D16 /* FriendsPlayerMessagesExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FriendsPlayerMessagesExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -84,6 +94,13 @@
 				"Friends-Player-Info.plist",
 			);
 			target = 21F4B4572FE176D200D79A59 /* Friends Player */;
+		};
+		B7B620DB366B4A87C0BE36A0 /* Exceptions for "FriendsPlayerMessages" folder in "FriendsPlayerMessagesExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 16FC749809ABB4DAAF992E0D /* FriendsPlayerMessagesExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -113,6 +130,14 @@
 		21F4B4742FE176D300D79A59 /* Friends PlayerUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Friends PlayerUITests";
+			sourceTree = "<group>";
+		};
+		B6DB33587C92CE40FF4C605D /* FriendsPlayerMessages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B7B620DB366B4A87C0BE36A0 /* Exceptions for "FriendsPlayerMessages" folder in "FriendsPlayerMessagesExtension" target */,
+			);
+			path = FriendsPlayerMessages;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -148,6 +173,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3AED8AC42E7DF9B0C2791365 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -170,6 +202,7 @@
 				21AECC982FEDFC6F0082ABFC /* FriendsPlayerWidget */,
 				21AECC932FEDFC6F0082ABFC /* Frameworks */,
 				21F4B4592FE176D200D79A59 /* Products */,
+				B6DB33587C92CE40FF4C605D /* FriendsPlayerMessages */,
 			);
 			sourceTree = "<group>";
 		};
@@ -180,6 +213,7 @@
 				21F4B4672FE176D300D79A59 /* Friends PlayerTests.xctest */,
 				21F4B4712FE176D300D79A59 /* Friends PlayerUITests.xctest */,
 				21AECC922FEDFC6F0082ABFC /* FriendsPlayerWidgetExtension.appex */,
+				3EB4601CB50CF8A111F29D16 /* FriendsPlayerMessagesExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -222,6 +256,7 @@
 			);
 			dependencies = (
 				21AECCA52FEDFC710082ABFC /* PBXTargetDependency */,
+				F7379530A66969BB6FAA541C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				21F4B45A2FE176D200D79A59 /* Friends Player */,
@@ -279,6 +314,28 @@
 			productReference = 21F4B4712FE176D300D79A59 /* Friends PlayerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		16FC749809ABB4DAAF992E0D /* FriendsPlayerMessagesExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6EA110E48409844644DB71CE /* Build configuration list for PBXNativeTarget "FriendsPlayerMessagesExtension" */;
+			buildPhases = (
+				9D458C8D405B1A3D215D7B8E /* Sources */,
+				3AED8AC42E7DF9B0C2791365 /* Frameworks */,
+				CE8470D6CCDF0CA395872C72 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B6DB33587C92CE40FF4C605D /* FriendsPlayerMessages */,
+			);
+			name = FriendsPlayerMessagesExtension;
+			packageProductDependencies = (
+			);
+			productName = FriendsPlayerMessagesExtension;
+			productReference = 3EB4601CB50CF8A111F29D16 /* FriendsPlayerMessagesExtension.appex */;
+			productType = "com.apple.product-type.app-extension.messages";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -289,6 +346,9 @@
 				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
+					16FC749809ABB4DAAF992E0D = {
+						CreatedOnToolsVersion = 26.5;
+					};
 					21AECC912FEDFC6F0082ABFC = {
 						CreatedOnToolsVersion = 26.5;
 					};
@@ -323,6 +383,7 @@
 				21F4B4662FE176D300D79A59 /* Friends PlayerTests */,
 				21F4B4702FE176D300D79A59 /* Friends PlayerUITests */,
 				21AECC912FEDFC6F0082ABFC /* FriendsPlayerWidgetExtension */,
+				16FC749809ABB4DAAF992E0D /* FriendsPlayerMessagesExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -350,6 +411,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		21F4B46F2FE176D300D79A59 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE8470D6CCDF0CA395872C72 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -387,6 +455,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9D458C8D405B1A3D215D7B8E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -405,6 +480,11 @@
 			target = 21F4B4572FE176D200D79A59 /* Friends Player */;
 			targetProxy = 21F4B4722FE176D300D79A59 /* PBXContainerItemProxy */;
 		};
+		F7379530A66969BB6FAA541C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 16FC749809ABB4DAAF992E0D /* FriendsPlayerMessagesExtension */;
+			targetProxy = 102B5C0E319C58B7E84DD470 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -415,7 +495,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = FriendsPlayerWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = J4KWXV82LA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FriendsPlayerWidget/Info.plist;
@@ -426,7 +506,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player.FriendsPlayerWidget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -446,7 +526,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = FriendsPlayerWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = J4KWXV82LA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FriendsPlayerWidget/Info.plist;
@@ -457,7 +537,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player.FriendsPlayerWidget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -598,7 +678,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "Friends Player/Friends Player.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = J4KWXV82LA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -613,7 +693,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -635,7 +715,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "Friends Player/Friends Player.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = J4KWXV82LA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -650,7 +730,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.1.1;
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -747,6 +827,62 @@
 			};
 			name = Release;
 		};
+		043CA731D2BC0D7535F06CAE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "iMessage App Icon";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = J4KWXV82LA;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FriendsPlayerMessages/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Friends Player";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player.MessagesExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		567C2422526664CD345FB5AA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "iMessage App Icon";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = J4KWXV82LA;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FriendsPlayerMessages/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Friends Player";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.luxrecta.Friends-Player.MessagesExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -791,6 +927,15 @@
 			buildConfigurations = (
 				21F4B4822FE176D300D79A59 /* Debug */,
 				21F4B4832FE176D300D79A59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6EA110E48409844644DB71CE /* Build configuration list for PBXNativeTarget "FriendsPlayerMessagesExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				043CA731D2BC0D7535F06CAE /* Debug */,
+				567C2422526664CD345FB5AA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
