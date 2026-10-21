@@ -33,11 +33,11 @@ struct SendSongLinks: View {
                         target: target
                     ),
                     preview: SharePreview(
-                        "Play \(song.displayTitle) in \(target.appName)",
+                        "Play \(SongShareLink.title(of: song)) in \(target.appName)",
                         icon: Image(target.iconAssetName)
                     )
                 ) {
-                    Label("Send to \(target.appName) User", systemImage: "paperplane")
+                    Label("Send Link to \(target.appName) User", systemImage: "link")
                 }
             }
         }

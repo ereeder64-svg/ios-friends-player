@@ -85,8 +85,14 @@ enum SongShareLink {
 
     // MARK: - Sending
 
+    /// The song's title as it should appear in a message -- some titles in
+    /// the library carry stray leading/trailing spaces from their tags.
+    static func title(of song: Song) -> String {
+        song.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     static func url(for song: Song, sender: String, target: Target) -> URL? {
-        var items = [URLQueryItem(name: "t", value: encode(song.displayTitle))]
+        var items = [URLQueryItem(name: "t", value: encode(title(of: song)))]
         if let persona = song.album?.persona?.name, !persona.isEmpty {
             items.append(URLQueryItem(name: "p", value: encode(persona)))
         }
@@ -106,8 +112,8 @@ enum SongShareLink {
         let personaName = song.album?.persona?.name ?? ""
         let byline = personaName.isEmpty ? "" : " by \(personaName)"
         return sender.isEmpty
-            ? "Check out \"\(song.displayTitle)\"\(byline)."
-            : "\(sender) sent you \"\(song.displayTitle)\"\(byline)."
+            ? "Check out \"\(title(of: song))\"\(byline)."
+            : "\(sender) sent you \"\(title(of: song))\"\(byline)."
     }
 
     /// What goes in the Messages compose box: the intro line, then the link.

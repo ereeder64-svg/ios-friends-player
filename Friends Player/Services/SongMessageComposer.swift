@@ -28,7 +28,7 @@ final class SongMessageComposer: NSObject, MFMessageComposeViewControllerDelegat
 
         let layout = MSMessageTemplateLayout()
         layout.image = UIImage(named: target.iconAssetName)
-        layout.caption = song.displayTitle
+        layout.caption = SongShareLink.title(of: song)
         layout.subcaption = song.album?.persona?.name
         layout.trailingSubcaption = sender.isEmpty ? nil : "from \(sender)"
 
